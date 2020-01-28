@@ -112,6 +112,10 @@
         "title": "%showDSAttributes%"
       },
       {
+        "command": "zowe.inspectDataSet",
+        "title": "%inspectDataSet%"
+      },
+      {
         "command": "zowe.renameDataSet",
         "title": "%renameDataSet%"
       },
@@ -625,6 +629,11 @@
         },
         {
           "when": "view == zowe.explorer && viewItem == ds",
+          "command": "zowe.inspectDataSet",
+          "group": "2_information"
+        },
+        {
+          "when": "view == zowe.explorer && viewItem == ds",
           "command": "zowe.renameDataSet",
           "group": "6_modification@2"
         },
@@ -651,6 +660,11 @@
         {
           "when": "view == zowe.explorer && viewItem == ds_fav",
           "command": "zowe.showDSAttributes",
+          "group": "2_information"
+        },
+        {
+          "when": "view == zowe.explorer && viewItem == ds_fav",
+          "command": "zowe.inspectDataSet",
           "group": "2_information"
         },
         {
@@ -695,6 +709,11 @@
         },
         {
           "when": "view == zowe.explorer && viewItem == pds",
+          "command": "zowe.inspectDataSet",
+          "group": "2_information"
+        },
+        {
+          "when": "view == zowe.explorer && viewItem == pds",
           "command": "zowe.deletePDS",
           "group": "6_modification@2"
         },
@@ -730,6 +749,11 @@
         },
         {
           "when": "view == zowe.explorer && viewItem == pds_fav",
+          "command": "zowe.inspectDataSet",
+          "group": "2_information"
+        },
+        {
+          "when": "view == zowe.explorer && viewItem == pds_fav",
           "command": "zowe.deletePDS",
           "group": "6_modification@2"
         },
@@ -761,6 +785,11 @@
         {
           "when": "view == zowe.explorer && viewItem == migr",
           "command": "zowe.showDSAttributes",
+          "group": "2_information"
+        },
+        {
+          "when": "view == zowe.explorer && viewItem == migr",
+          "command": "zowe.inspectDataSet",
           "group": "2_information"
         },
         {
