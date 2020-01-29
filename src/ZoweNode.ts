@@ -30,6 +30,7 @@ export class ZoweNode extends vscode.TreeItem implements IZoweTreeNode {
     public pattern = "";
     public dirty = extension.ISTHEIA;  // Make sure this is true for theia instances
     public children: ZoweNode[] = [];
+    public fullChildrenList: ZoweNode[] = [];
 
     /**
      * Creates an instance of ZoweNode
@@ -96,12 +97,6 @@ export class ZoweNode extends vscode.TreeItem implements IZoweTreeNode {
             throw Error(localize("getChildren.error.invalidNode", "Invalid node"));
         }
 
-        // Check if node is a favorite
-        let label = this.label.trim();
-        if (this.label.startsWith("[")) {
-            label = this.label.substring(this.label.indexOf(":") + 1).trim();
-        }
-
         // Gets the datasets from the pattern or members of the dataset and displays any thrown errors
         const responses: zowe.IZosFilesResponse[] = [];
         try {
@@ -112,7 +107,7 @@ export class ZoweNode extends vscode.TreeItem implements IZoweTreeNode {
                     responses.push(await zowe.List.dataSet(this.getSession(), pattern.trim(), {attributes: true}));
                 }
             } else {
-                responses.push(await zowe.List.allMembers(this.getSession(), label, {attributes: true}));
+                responses.push(await zowe.List.allMembers(this.getSession(), this.retrievableLabel, {attributes: true}));
             }
         } catch (err) {
             vscode.window.showErrorMessage(localize("getChildren.error.response", "Retrieving response from zowe.List")
@@ -156,11 +151,40 @@ export class ZoweNode extends vscode.TreeItem implements IZoweTreeNode {
 
         this.dirty = false;
         if (Object.keys(elementChildren).length === 0) {
-            return this.children = [new ZoweNode(localize("getChildren.noDataset", "No datasets found"),
-            vscode.TreeItemCollapsibleState.None, this, null, extension.INFORMATION_CONTEXT)];
+            const children = [new ZoweNode(localize("getChildren.noDataset", "No datasets found"),
+                vscode.TreeItemCollapsibleState.None, this, null, extension.INFORMATION_CONTEXT)];
+            this.children = children;
+            this.fullChildrenList = children;
+
+            return this.children;
         } else {
-            return this.children = Object.keys(elementChildren).sort().map((labels) => elementChildren[labels]);
+            const children = Object.keys(elementChildren).sort().map((labels) => elementChildren[labels]);
+            // TODO: Add to constants
+            const paginationCount = 50;
+            this.children = children.slice(0, paginationCount);
+            this.fullChildrenList = children;
+
+            return this.children;
         }
+    }
+
+    /**
+     * Getter for label which has format ready to list retrieval of other operations.
+     *
+     * @returns {string}
+     */
+    public get retrievableLabel(): string {
+        if (this.label) {
+            let label = this.label.trim();
+
+            if (this.label.startsWith("[")) {
+                label = this.label.split(":").pop().trim();
+            }
+
+            return label;
+        }
+
+        return "";
     }
 
     /**

@@ -1,0 +1,17 @@
+body {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+}
+
+.table-wrapper {
+    max-height: 80%;
+    overflow-y: auto;
+}
+
+.pagination-controls {
+    display: flex;
+    justify-content: flex-end;
+}

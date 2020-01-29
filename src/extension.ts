@@ -207,7 +207,8 @@ export async function activate(context: vscode.ExtensionContext) {
         vscode.commands.registerCommand("zowe.renameDataSet", (node) => renameDataSet(node, datasetProvider));
         vscode.commands.registerCommand("zowe.copyDataSet", (node) => copyDataSet(node));
         vscode.commands.registerCommand("zowe.pasteDataSet", (node) => pasteDataSet(node, datasetProvider));
-        vscode.commands.registerCommand("zowe.inspectDataSet", (node) => inspectDataSet(node, datasetProvider, context.extensionPath));
+        vscode.commands.registerCommand("zowe.inspectDataSet", (node) => inspectDataSet(node, context.extensionPath));
+        vscode.commands.registerCommand("zowe.refreshDataSetInTree", (node) => refreshUSSInTree(node, datasetProvider));
         vscode.commands.registerCommand("zowe.renameDataSetMember", (node) => renameDataSetMember(node, datasetProvider));
         vscode.workspace.onDidChangeConfiguration(async (e) => {
             datasetProvider.onDidChangeConfiguration(e);
@@ -1084,8 +1085,22 @@ export async function pasteDataSet(node: ZoweNode, datasetProvider: DatasetTree)
     }
 }
 
-export async function inspectDataSet(node: ZoweNode, datasetProvider: DatasetTree, basePath: string) {
-    TreeWebView.generateInstance(node.label, {basePath, node});
+export async function inspectDataSet(node: ZoweNode, basePath: string) {
+    node.children = [];
+    node.dirty = true;
+    await node.getChildren();
+
+    const view = TreeWebView.generateInstance(node.label, {basePath, node});
+    view.setList(node.fullChildrenList.map((entry) => {
+        return {
+            name: entry.label,
+            type: "DATASET MEMBER"
+        };
+    }));
+}
+
+export async function refreshUSSInTree(node: ZoweNode, datasetProvider: DatasetTree) {
+    datasetProvider.refreshElement(node, true);
 }
 
 /**

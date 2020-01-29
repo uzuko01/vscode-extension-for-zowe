@@ -15,6 +15,7 @@
     "createDataset": "Create New Data Set",
     "createMember": "Create New Member",
     "showDSAttributes": "Show Data Set Attributes",
+    "inspectDataSet": "Show All Items",
     "deleteDataset": "Delete Data Set",
     "deleteMember": "Delete Member",
     "deletePDS": "Delete PDS",

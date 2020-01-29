@@ -173,8 +173,10 @@ export class DatasetTree implements IZoweTree<ZoweNode> {
      * Called whenever the tree needs to be refreshed, and fires the data change event
      *
      */
-    public refreshElement(element: ZoweNode): void {
-        element.dirty = true;
+    public refreshElement(element: ZoweNode, ignoreDirty = false): void {
+        if (!ignoreDirty) {
+            element.dirty = true;
+        }
         this.mOnDidChangeTreeData.fire(element);
     }
 

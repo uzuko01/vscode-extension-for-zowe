@@ -1,17 +1,31 @@
+/*
+* This program and the accompanying materials are made available under the terms of the *
+* Eclipse Public License v2.0 which accompanies this distribution, and is available at *
+* https://www.eclipse.org/legal/epl-v20.html                                      *
+*                                                                                 *
+* SPDX-License-Identifier: EPL-2.0                                                *
+*                                                                                 *
+* Copyright Contributors to the Zowe Project.                                     *
+*                                                                                 *
+*/
+
 import * as vscode from "vscode";
 import { getContentForWebView, unifyContentOfHTML } from "../../utils/webView";
 import * as path from "path";
 import { IWebViewAction } from "../types";
 import { ZoweNode } from "../../ZoweNode";
+import { ZoweUSSNode } from "../../ZoweUSSNode";
+
+type CombinedNode = ZoweNode | ZoweUSSNode;
 
 export interface ITreeWebViewItem {
-    path: string;
     name: string;
+    type: string;
 }
 
 export interface ITreeWebViewOptions {
     basePath: string;
-    node?: ZoweNode;
+    node?: CombinedNode;
     list?: ITreeWebViewItem[];
 }
 
@@ -20,18 +34,21 @@ export enum InputAction {
 }
 
 export enum OutputAction {
-    selectedItems = "selectedItems"
+    switchedPage = "switchedPage"
 }
 
 class TreeWebView {
     private panel: vscode.WebviewPanel;
     private content: { html: string; js: string; css: string; };
+    private targetNode: CombinedNode;
 
     constructor(basePath: string) {
-        this.content = getContentForWebView(path.resolve(basePath, "src", "webviews", "treeWebView"));
+        this.content = getContentForWebView(path.resolve(basePath, "webviews", "treeWebView"));
     }
 
-    public initialize(title: string) {
+    public initialize(title: string, node: CombinedNode) {
+        this.targetNode = node;
+
         this.initView(title);
         this.initHTMLContent();
         this.setOutputEventHandler();
@@ -69,7 +86,17 @@ class TreeWebView {
 
     private setOutputEventHandler() {
         this.panel.webview.onDidReceiveMessage((event) => {
-            console.log(event);
+            switch (event.type) {
+                case OutputAction.switchedPage:
+                    const {content} = event as IWebViewAction<OutputAction.switchedPage, { page: number }>;
+                    // TODO: Add to constants
+                    const paginationCount = 50;
+                    const paginatedList = (this.targetNode as any).fullChildrenList
+                        .slice((content.page - 1) * paginationCount, content.page * paginationCount);
+                    this.targetNode.children = paginatedList;
+                    vscode.commands.executeCommand("zowe.refreshDataSetInTree", this.targetNode);
+                    break;
+            }
         });
     }
 }
@@ -86,7 +113,7 @@ export function generateInstance(title: string, options?: ITreeWebViewOptions) {
     }
 
     if (instance) {
-        instance.initialize(title);
+        instance.initialize(title, options.node);
     }
 
     return instance;
