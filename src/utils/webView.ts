@@ -27,3 +27,8 @@ export function unifyContentOfHTML(content: {html: string; js: string; css: stri
 
     return html;
 }
+
+export function injectConstantsBlockToHTML(html: string, constants: {[index: string]: any}) {
+    const constantsString = Buffer.from(JSON.stringify(constants)).toString("base64");
+    return html.replace("constantsPlaceholderAttribute", `constants="${constantsString}"`);
+}

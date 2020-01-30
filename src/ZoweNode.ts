@@ -16,6 +16,7 @@ import * as nls from "vscode-nls";
 import * as utils from "./utils";
 import * as extension from "../src/extension";
 import { IZoweTreeNode } from "./ZoweTree";
+import { pagination } from "./config/constants";
 const localize = nls.config({ messageFormat: nls.MessageFormat.file })();
 
 /**
@@ -159,9 +160,7 @@ export class ZoweNode extends vscode.TreeItem implements IZoweTreeNode {
             return this.children;
         } else {
             const children = Object.keys(elementChildren).sort().map((labels) => elementChildren[labels]);
-            // TODO: Add to constants
-            const paginationCount = 50;
-            this.children = children.slice(0, paginationCount);
+            this.children = children.slice(0, pagination.itemsPerPage);
             this.fullChildrenList = children;
 
             return this.children;

@@ -10,11 +10,12 @@
 */
 
 import * as vscode from "vscode";
-import { getContentForWebView, unifyContentOfHTML } from "../../utils/webView";
+import { getContentForWebView, injectConstantsBlockToHTML, unifyContentOfHTML } from "../../utils/webView";
 import * as path from "path";
 import { IWebViewAction } from "../types";
 import { ZoweNode } from "../../ZoweNode";
 import { ZoweUSSNode } from "../../ZoweUSSNode";
+import { pagination } from "../../config/constants";
 
 type CombinedNode = ZoweNode | ZoweUSSNode;
 
@@ -34,7 +35,8 @@ export enum InputAction {
 }
 
 export enum OutputAction {
-    switchedPage = "switchedPage"
+    switchedPage = "switchedPage",
+    producedError = "producedError"
 }
 
 class TreeWebView {
@@ -81,20 +83,26 @@ class TreeWebView {
     }
 
     private initHTMLContent() {
-        this.panel.webview.html = unifyContentOfHTML(this.content);
+        let htmlContent = unifyContentOfHTML(this.content);
+        htmlContent = injectConstantsBlockToHTML(htmlContent, {pagination, actions: {input: InputAction, output: OutputAction}});
+        this.panel.webview.html = htmlContent;
     }
 
     private setOutputEventHandler() {
-        this.panel.webview.onDidReceiveMessage((event) => {
+        this.panel.webview.onDidReceiveMessage((event: any) => {
+            let content;
+
             switch (event.type) {
                 case OutputAction.switchedPage:
-                    const {content} = event as IWebViewAction<OutputAction.switchedPage, { page: number }>;
-                    // TODO: Add to constants
-                    const paginationCount = 50;
+                    content = (event as IWebViewAction<OutputAction.switchedPage, { page: number }>).content;
                     const paginatedList = (this.targetNode as any).fullChildrenList
-                        .slice((content.page - 1) * paginationCount, content.page * paginationCount);
+                        .slice((content.page - 1) * pagination.itemsPerPage, content.page * pagination.itemsPerPage);
                     this.targetNode.children = paginatedList;
                     vscode.commands.executeCommand("zowe.refreshDataSetInTree", this.targetNode);
+                    break;
+                case OutputAction.producedError:
+                    content = (event as IWebViewAction<OutputAction.producedError, { message: string }>).content;
+                    vscode.window.showErrorMessage(content.message);
                     break;
             }
         });
