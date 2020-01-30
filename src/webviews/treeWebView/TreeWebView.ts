@@ -77,7 +77,8 @@ class TreeWebView {
             title,
             vscode.ViewColumn.Two,
             {
-                enableScripts: true
+                enableScripts: true,
+                retainContextWhenHidden: true
             }
         );
     }
