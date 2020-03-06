@@ -11,14 +11,13 @@
 
 jest.mock("vscode");
 jest.mock("child_process");
-import { Logger, ISession, ImperativeConfig } from "@brightside/imperative";
 import * as path from "path";
 import * as os from "os";
-import * as child_process from "child_process";
 import * as vscode from "vscode";
+import * as child_process from "child_process";
+import { Logger, ISession } from "@zowe/imperative";
 import { Profiles } from "../../src/Profiles";
-
-import { ZosmfSession } from "@brightside/core";
+import { ZosmfSession } from "@zowe/cli";
 
 describe("Profile class unit tests", () => {
     // Mocking log.debug
@@ -55,17 +54,12 @@ describe("Profile class unit tests", () => {
     const createInputBox = jest.fn();
     const showQuickPick = jest.fn();
     const showErrorMessage = jest.fn();
-//    const cliHome = jest.fn().mockReturnValue(homedir);
-//    const icInstance = jest.fn();
 
     Object.defineProperty(vscode.window, "showInformationMessage", { value: showInformationMessage });
     Object.defineProperty(vscode.window, "showErrorMessage", { value: showErrorMessage });
     Object.defineProperty(vscode.window, "showInputBox", { value: showInputBox });
     Object.defineProperty(vscode.window, "createInputBox", { value: createInputBox });
     Object.defineProperty(vscode.window, "showQuickPick", { value: showQuickPick });
-//    Object.defineProperty(brtimperative, "ImperativeConfig", { value: ImperativeConfig });
-//    Object.defineProperty(ImperativeConfig, "instance", { value: icInstance });
-//    Object.defineProperty(icInstance, "cliHome", { value: cliHome });
 
     beforeEach(() => {
         mockJSONParse.mockReturnValue({
@@ -144,6 +138,7 @@ describe("Profile class unit tests", () => {
         });
 
         afterEach(() => {
+            showInputBox.mockReset();
             showQuickPick.mockReset();
             createInputBox.mockReset();
             showInformationMessage.mockReset();
@@ -268,25 +263,13 @@ describe("Profile class unit tests", () => {
         });
 
         it("should prompt credentials", async () => {
-            const promptProfile = {name: "profile1", profile: {Session: {ISession: {user: "fake", password: "1234"}}}};
-            const session  = (await ZosmfSession.createBasicZosmfSession(promptProfile.profile) as ISession);
-            Object.defineProperty(Profiles, "getInstance", {
-                value: jest.fn(() => {
-                    return {
-                        allProfiles: [{name: "firstName", profile: {user:undefined, password: undefined}}, {name: "secondName"}],
-                        defaultProfile: {name: "firstName"},
-                        loadNamedProfile: promptProfile,
-                        promptCredentials: jest.fn(()=> {
-                            return [{values: "fake"}, {values: "fake"}, {values: "fake"}];
-                    }),
-                    };
-                })
+            const promptProfile = {name: "profile1", profile: {user: undefined, password: undefined}};
+            profiles.loadNamedProfile = jest.fn(() => {
+                return promptProfile as any;
             });
             Object.defineProperty(ZosmfSession, "createBasicZosmfSession", {
                 value: jest.fn(() => {
-                    return {
-                        ISession: {user: "fake", password: "fake", base64EncodedAuth: "fake"}
-                    };
+                    return { ISession: {user: "fake", password: "fake", base64EncodedAuth: "fake"} };
                 })
             });
             showInputBox.mockResolvedValueOnce("fake");
@@ -295,40 +278,34 @@ describe("Profile class unit tests", () => {
             expect(res[0]).toBe("fake");
             expect(res[1]).toBe("fake");
             expect(res[2]).toBe("fake");
-        });
+            (profiles.loadNamedProfile as any).mockReset();
+          });
 
         it("should prompt credentials: username invalid", async () => {
-            const promptProfile = {name: "profile1", profile: {user: "fake", password: "1234"}};
-            const session  = (await ZosmfSession.createBasicZosmfSession(promptProfile.profile) as ISession);
-            Object.defineProperty(Profiles.getInstance, "promptCredentials", {
-                value: jest.fn(() => {
-                    return {
-                        updSession: session
-                    };
-                })
+            const promptProfile = {name: "profile1", profile: {user: undefined, password: undefined}};
+            profiles.loadNamedProfile = jest.fn(() => {
+                return promptProfile as any;
             });
             showInputBox.mockResolvedValueOnce(undefined);
-            showInputBox.mockResolvedValueOnce("fake");
             const res = await profiles.promptCredentials(promptProfile.name);
+            expect(res).toBeUndefined();
             expect(showErrorMessage.mock.calls.length).toBe(1);
             expect(showErrorMessage.mock.calls[0][0]).toBe("Please enter your z/OS username. Operation Cancelled");
+            (profiles.loadNamedProfile as any).mockReset();
         });
 
         it("should prompt credentials: password invalid", async () => {
-            const promptProfile = {name: "profile1", profile: {user: "fake", password: "1234"}};
-            const session  = (await ZosmfSession.createBasicZosmfSession(promptProfile.profile) as ISession);
-            Object.defineProperty(Profiles.getInstance, "promptCredentials", {
-                value: jest.fn(() => {
-                    return {
-                        updSession: session
-                    };
-                })
+            const promptProfile = {name: "profile1", profile: {user: undefined, password: undefined}};
+            profiles.loadNamedProfile = jest.fn(() => {
+                return promptProfile as any;
             });
             showInputBox.mockResolvedValueOnce("fake");
             showInputBox.mockResolvedValueOnce(undefined);
             const res = await profiles.promptCredentials(promptProfile.name);
+            expect(res).toBeUndefined();
             expect(showErrorMessage.mock.calls.length).toBe(1);
             expect(showErrorMessage.mock.calls[0][0]).toBe("Please enter your z/OS password. Operation Cancelled");
+            (profiles.loadNamedProfile as any).mockReset();
         });
 
         it("should validate URL", async () => {
@@ -429,7 +406,6 @@ describe("Profile class unit tests", () => {
         mockJSONParse.mockReturnValueOnce(profileOne);
         await Profiles.createInstance(log);
         expect(Profiles.getInstance().allProfiles).toEqual([profileOne, profileTwo]);
-        expect(Profiles.getInstance().defaultProfile).toEqual(profileOne);
     });
 
     it("should route through to spawn. Coverage of error handling", async () => {
@@ -470,6 +446,5 @@ describe("Profile class unit tests", () => {
         mockJSONParse.mockReturnValueOnce(profileOne);
         await Profiles.createInstance(log);
         expect(Profiles.getInstance().allProfiles).toEqual([profileOne, profileTwo]);
-        expect(Profiles.getInstance().defaultProfile).toEqual(profileOne);
     });
 });

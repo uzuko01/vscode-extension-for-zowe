@@ -9,19 +9,21 @@
 *                                                                                 *
 */
 
+import { getIconByNode } from "../../src/generators/icons";
+
 jest.mock("vscode");
 jest.mock("fs");
 jest.mock("util");
 jest.mock("Session");
-jest.mock("@brightside/core");
-jest.mock("@brightside/imperative");
+jest.mock("@zowe/imperative");
 jest.mock("isbinaryfile");
 jest.mock("../../src/Profiles");
+
 import * as vscode from "vscode";
 import { DatasetTree } from "../../src/DatasetTree";
-import { ZoweNode } from "../../src/ZoweNode";
-import { Session, Logger } from "@brightside/imperative";
-import * as zowe from "@brightside/core";
+import { ZoweDatasetNode } from "../../src/ZoweDatasetNode";
+import { Session, Logger, IProfileLoaded } from "@zowe/imperative";
+import * as zowe from "@zowe/cli";
 import * as utils from "../../src/utils";
 import { Profiles } from "../../src/Profiles";
 import * as extension from "../../src/extension";
@@ -37,25 +39,15 @@ describe("DatasetTree Unit Tests", () => {
         type: "basic",
     });
 
-    const ProgressLocation = jest.fn().mockImplementation(() => {
-        return {
-            Notification: 15
-        };
-    });
-    const withProgress = jest.fn().mockImplementation(() => {
-        return {
-            location: 15,
-            title: "Saving file..."
-        };
-    });
-
     // Filter prompt
     const showInformationMessage = jest.fn();
+    const showErrorMessage = jest.fn();
     const showInputBox = jest.fn();
     const showQuickPick = jest.fn();
     const filters = jest.fn();
     const getFilters = jest.fn();
     const createQuickPick = jest.fn();
+    const createTreeView = jest.fn();
     const createBasicZosmfSession = jest.fn();
     const ZosmfSession = jest.fn();
     Object.defineProperty(zowe, "ZosmfSession", { value: ZosmfSession });
@@ -66,15 +58,29 @@ describe("DatasetTree Unit Tests", () => {
             };
         })
     });
+    const ProgressLocation = jest.fn().mockImplementation(() => {
+        return {
+            Notification: 15
+        };
+    });
+
+    const withProgress = jest.fn().mockImplementation((progLocation, callback) => {
+        return callback();
+    });
+
+    Object.defineProperty(vscode, "ProgressLocation", {value: ProgressLocation});
+    Object.defineProperty(vscode.window, "withProgress", {value: withProgress});
     Object.defineProperty(vscode.window, "showInformationMessage", {value: showInformationMessage});
-    Object.defineProperty(vscode.window, "showInformationMessage", {value: showInformationMessage});
+    Object.defineProperty(vscode.window, "showErrorMessage", {value: showErrorMessage});
     Object.defineProperty(vscode.window, "showQuickPick", {value: showQuickPick});
     Object.defineProperty(vscode.window, "showInputBox", {value: showInputBox});
+    Object.defineProperty(vscode.window, "createTreeView", {value: createTreeView});
     Object.defineProperty(filters, "getFilters", { value: getFilters });
     Object.defineProperty(vscode.window, "createQuickPick", {value: createQuickPick});
     Object.defineProperty(vscode, "ProgressLocation", {value: ProgressLocation});
     Object.defineProperty(vscode.window, "withProgress", {value: withProgress});
     getFilters.mockReturnValue(["HLQ", "HLQ.PROD1"]);
+    createTreeView.mockReturnValue("testTreeView");
     const getConfiguration = jest.fn();
     Object.defineProperty(vscode.workspace, "getConfiguration", { value: getConfiguration });
     getConfiguration.mockReturnValue({
@@ -98,7 +104,14 @@ describe("DatasetTree Unit Tests", () => {
     });
     Object.defineProperty(vscode, "ConfigurationTarget", {value: enums});
     const mockLoadNamedProfile = jest.fn();
-    mockLoadNamedProfile.mockReturnValue({name:"aProfile", profile: {name:"aProfile", type:"zosmf", profile:{name:"aProfile", type:"zosmf"}}});
+    const profileOne: IProfileLoaded = {
+        name: "aProfile",
+        profile: {},
+        type: "zosmf",
+        message: "",
+        failNotFound: false
+    };
+    mockLoadNamedProfile.mockReturnValue(profileOne);
     Object.defineProperty(Profiles, "getInstance", {
         value: jest.fn(() => {
             return {
@@ -108,12 +121,21 @@ describe("DatasetTree Unit Tests", () => {
             };
         })
     });
-    Profiles.createInstance(Logger.getAppLogger());
     const testTree = new DatasetTree();
-    testTree.mSessionNodes.push(new ZoweNode("testSess", vscode.TreeItemCollapsibleState.Collapsed, null, session));
+    testTree.mSessionNodes.push(new ZoweDatasetNode("testSess", vscode.TreeItemCollapsibleState.Collapsed,
+                                null, session, undefined, undefined, profileOne));
     testTree.mSessionNodes[1].contextValue = extension.DS_SESSION_CONTEXT;
     testTree.mSessionNodes[1].pattern = "test";
-    testTree.mSessionNodes[1].iconPath = utils.applyIcons(testTree.mSessionNodes[1]);
+    const icon = getIconByNode(testTree.mSessionNodes[1]);
+    if (icon) {
+        testTree.mSessionNodes[1].iconPath = icon.path;
+    }
+
+    beforeEach(() => {
+        withProgress.mockImplementation((progLocation, callback) => {
+            return callback();
+        });
+    });
 
     afterAll(() => {
         jest.restoreAllMocks();
@@ -127,13 +149,14 @@ describe("DatasetTree Unit Tests", () => {
      *************************************************************************************************************/
     it("Testing that the dataset tree is defined", async () => {
         expect(testTree.mSessionNodes).toBeDefined();
+        expect(testTree.getTreeView()).toEqual("testTreeView");
     });
 
     /*************************************************************************************************************
      * Calls getTreeItem with sample element and checks the return is vscode.TreeItem
      *************************************************************************************************************/
     it("Testing the getTreeItem method", async () => {
-        const sampleElement = new ZoweNode("BRTVS99", vscode.TreeItemCollapsibleState.None,
+        const sampleElement = new ZoweDatasetNode("BRTVS99", vscode.TreeItemCollapsibleState.None,
             null, null);
         expect(testTree.getTreeItem(sampleElement)).toBeInstanceOf(vscode.TreeItem);
     });
@@ -147,14 +170,20 @@ describe("DatasetTree Unit Tests", () => {
 
         // Creating a rootNode
         const sessNode = [
-            new ZoweNode("Favorites", vscode.TreeItemCollapsibleState.Collapsed, null, null),
-            new ZoweNode("testSess", vscode.TreeItemCollapsibleState.Collapsed, null, session),
+            new ZoweDatasetNode("Favorites", vscode.TreeItemCollapsibleState.Collapsed, null, null),
+            new ZoweDatasetNode("testSess", vscode.TreeItemCollapsibleState.Collapsed, null, session),
         ];
         sessNode[0].contextValue = extension.FAVORITE_CONTEXT;
         sessNode[1].contextValue = extension.DS_SESSION_CONTEXT;
         sessNode[1].pattern = "test";
-        sessNode[0].iconPath = utils.applyIcons(sessNode[0]);
-        sessNode[1].iconPath = utils.applyIcons(sessNode[1]);
+        let targetIcon = getIconByNode(sessNode[0]);
+        if (targetIcon) {
+            sessNode[0].iconPath = targetIcon.path;
+        }
+        targetIcon = getIconByNode(sessNode[1]);
+        if (targetIcon) {
+            sessNode[1].iconPath = targetIcon.path;
+        }
 
         // Checking that the rootChildren are what they are expected to be
         expect(sessNode[0]).toMatchObject(rootChildren[0]);
@@ -175,16 +204,16 @@ describe("DatasetTree Unit Tests", () => {
 
     /*************************************************************************************************************
      * Creates a child with a rootNode as parent and checks that a getParent() call returns null.
-     * Also creates a child with a non-rootNode parent and checks that getParent() returns the correct ZoweNode
+     * Also creates a child with a non-rootNode parent and checks that getParent() returns the correct ZoweDatasetNode
      *************************************************************************************************************/
-    it("Tests that getParent returns the correct ZoweNode when called on a non-rootNode ZoweNode", async () => {
+    it("Tests that getParent returns the correct ZoweDatasetNode when called on a non-rootNode ZoweDatasetNode", async () => {
         // Creating fake datasets and dataset members to test
-        const sampleChild1: ZoweNode = new ZoweNode("BRTVS99.DDIR", vscode.TreeItemCollapsibleState.None,
+        const sampleChild1: ZoweDatasetNode = new ZoweDatasetNode("BRTVS99.DDIR", vscode.TreeItemCollapsibleState.None,
             testTree.mSessionNodes[0], session);
         const parent1 = testTree.getParent(sampleChild1);
 
         // Creating fake datasets and dataset members to test
-        const sampleChild2: ZoweNode = new ZoweNode("BRTVS99.PUBLIC.TEST", vscode.TreeItemCollapsibleState.None,
+        const sampleChild2: ZoweDatasetNode = new ZoweDatasetNode("BRTVS99.PUBLIC.TEST", vscode.TreeItemCollapsibleState.None,
             sampleChild1, null);
         const parent2 = testTree.getParent(sampleChild2);
 
@@ -197,19 +226,22 @@ describe("DatasetTree Unit Tests", () => {
     });
 
     /*************************************************************************************************************
-     * Tests that getChildren() method returns an array of all child nodes of passed ZoweNode
+     * Tests that getChildren() method returns an array of all child nodes of passed ZoweDatasetNode
      *************************************************************************************************************/
-    it("Testing that getChildren returns the correct ZoweNodes when called and passed an element of type ZoweNode<session>", async () => {
+    it("Testing that getChildren returns the correct ZoweNodes when called and passed an element of type ZoweDatasetNode<session>", async () => {
 
         testTree.mSessionNodes[1].dirty = true;
         // Waiting until we populate rootChildren with what getChildren return
         const sessChildren = await testTree.getChildren(testTree.mSessionNodes[1]);
         // Creating fake datasets and dataset members to test
-        const sampleChildren: ZoweNode[] = [
-            new ZoweNode("BRTVS99", vscode.TreeItemCollapsibleState.None, testTree.mSessionNodes[1], null),
-            new ZoweNode("BRTVS99.CA10", vscode.TreeItemCollapsibleState.None, testTree.mSessionNodes[1], null, extension.DS_MIGRATED_FILE_CONTEXT),
-            new ZoweNode("BRTVS99.CA11.SPFTEMP0.CNTL", vscode.TreeItemCollapsibleState.Collapsed, testTree.mSessionNodes[1], null),
-            new ZoweNode("BRTVS99.DDIR", vscode.TreeItemCollapsibleState.Collapsed, testTree.mSessionNodes[1], null),
+        const sampleChildren: ZoweDatasetNode[] = [
+            new ZoweDatasetNode("BRTVS99", vscode.TreeItemCollapsibleState.None, testTree.mSessionNodes[1], null, undefined, undefined, profileOne),
+            new ZoweDatasetNode("BRTVS99.CA10", vscode.TreeItemCollapsibleState.None, testTree.mSessionNodes[1],
+                null, extension.DS_MIGRATED_FILE_CONTEXT, undefined, profileOne),
+            new ZoweDatasetNode("BRTVS99.CA11.SPFTEMP0.CNTL", vscode.TreeItemCollapsibleState.Collapsed, testTree.mSessionNodes[1],
+                null, undefined, undefined, profileOne),
+            new ZoweDatasetNode("BRTVS99.DDIR", vscode.TreeItemCollapsibleState.Collapsed, testTree.mSessionNodes[1],
+            null, undefined, undefined, profileOne),
         ];
 
         sampleChildren[0].command = { command: "zowe.ZoweNode.openPS", title: "", arguments: [sampleChildren[0]] };
@@ -219,16 +251,16 @@ describe("DatasetTree Unit Tests", () => {
     });
 
     /*************************************************************************************************************
-     * Tests that getChildren() method returns an array of all child nodes of passed ZoweNode
+     * Tests that getChildren() method returns an array of all child nodes of passed ZoweDatasetNode
      *************************************************************************************************************/
-    it("Testing that getChildren returns the correct ZoweNodes when called and passed an element of type ZoweNode<favorite>", async () => {
+    it("Testing that getChildren returns the correct ZoweNodes when called and passed an element of type ZoweDatasetNode<favorite>", async () => {
 
         // Waiting until we populate rootChildren with what getChildren return
-        testTree.mFavorites.push(new ZoweNode("BRTVS99", vscode.TreeItemCollapsibleState.None, testTree.mSessionNodes[0], null));
+        testTree.mFavorites.push(new ZoweDatasetNode("BRTVS99", vscode.TreeItemCollapsibleState.None, testTree.mSessionNodes[0], null));
         const favChildren = await testTree.getChildren(testTree.mSessionNodes[0]);
         // Creating fake datasets and dataset members to test
-        const sampleChildren: ZoweNode[] = [
-            new ZoweNode("BRTVS99", vscode.TreeItemCollapsibleState.None, testTree.mSessionNodes[0], null)
+        const sampleChildren: ZoweDatasetNode[] = [
+            new ZoweDatasetNode("BRTVS99", vscode.TreeItemCollapsibleState.None, testTree.mSessionNodes[0], null)
         ];
 
         // Checking that the rootChildren are what they are expected to be
@@ -236,17 +268,17 @@ describe("DatasetTree Unit Tests", () => {
     });
 
     /*************************************************************************************************************
-     * Tests that getChildren() method returns an array of all child nodes of passed ZoweNode
+     * Tests that getChildren() method returns an array of all child nodes of passed ZoweDatasetNode
      *************************************************************************************************************/
-    it("Testing that getChildren returns the correct ZoweNodes when called and passed an element of type ZoweNode<pds>", async () => {
-        const pds = new ZoweNode("BRTVS99.PUBLIC", vscode.TreeItemCollapsibleState.Collapsed, testTree.mSessionNodes[1], null);
+    it("Testing that getChildren returns the correct ZoweNodes when called and passed an element of type ZoweDatasetNode<pds>", async () => {
+        const pds = new ZoweDatasetNode("BRTVS99.PUBLIC", vscode.TreeItemCollapsibleState.Collapsed, testTree.mSessionNodes[1], null);
         pds.dirty = true;
         // Waiting until we populate rootChildren with what getChildren return
         const pdsChildren = await testTree.getChildren(pds);
         // Creating fake datasets and dataset members to test
-        const sampleChildren: ZoweNode[] = [
-            new ZoweNode("BRTVS99", vscode.TreeItemCollapsibleState.None, pds, null),
-            new ZoweNode("BRTVS99.DDIR", vscode.TreeItemCollapsibleState.None, pds, null),
+        const sampleChildren: ZoweDatasetNode[] = [
+            new ZoweDatasetNode("BRTVS99", vscode.TreeItemCollapsibleState.None, pds, null),
+            new ZoweDatasetNode("BRTVS99.DDIR", vscode.TreeItemCollapsibleState.None, pds, null),
         ];
 
         sampleChildren[0].command = { command: "zowe.ZoweNode.openPS", title: "", arguments: [sampleChildren[0]] };
@@ -261,7 +293,7 @@ describe("DatasetTree Unit Tests", () => {
      *************************************************************************************************************/
     it("Tests the getHistory command", async () => {
         testTree.addHistory("testHistory");
-        const sampleElement = new ZoweNode("testValue", vscode.TreeItemCollapsibleState.None, null, null);
+        const sampleElement = new ZoweDatasetNode("testValue", vscode.TreeItemCollapsibleState.None, null, null);
         expect(testTree.getHistory()[0]).toEqual("testHistory");
     });
 
@@ -288,9 +320,9 @@ describe("DatasetTree Unit Tests", () => {
      *************************************************************************************************************/
     it("Testing that addFavorite works properly", async () => {
         testTree.mFavorites = [];
-        const parent = new ZoweNode("Parent", vscode.TreeItemCollapsibleState.Collapsed,
+        const parent = new ZoweDatasetNode("Parent", vscode.TreeItemCollapsibleState.Collapsed,
             testTree.mSessionNodes[1], null);
-        const member = new ZoweNode("Child", vscode.TreeItemCollapsibleState.None,
+        const member = new ZoweDatasetNode("Child", vscode.TreeItemCollapsibleState.None,
             parent, null);
 
         getConfiguration.mockReturnValue({
@@ -309,13 +341,13 @@ describe("DatasetTree Unit Tests", () => {
         await testTree.addFavorite(member);
 
         // Check adding duplicates
-        const pds = new ZoweNode("Parent", vscode.TreeItemCollapsibleState.Collapsed,
+        const pds = new ZoweDatasetNode("Parent", vscode.TreeItemCollapsibleState.Collapsed,
             testTree.mSessionNodes[1], null);
 
         await testTree.addFavorite(pds);
 
         // Check adding ps
-        const ps = new ZoweNode("Dataset", vscode.TreeItemCollapsibleState.None,
+        const ps = new ZoweDatasetNode("Dataset", vscode.TreeItemCollapsibleState.None,
             testTree.mSessionNodes[1], null);
 
         testTree.addFavorite(ps);
@@ -371,11 +403,14 @@ describe("DatasetTree Unit Tests", () => {
      *************************************************************************************************************/
     it("Testing that deleteSession works properly", async () => {
         const startLength = testTree.mSessionNodes.length;
-        testTree.mSessionNodes.push(new ZoweNode("testSess2", vscode.TreeItemCollapsibleState.Collapsed, null, session));
+        testTree.mSessionNodes.push(new ZoweDatasetNode("testSess2", vscode.TreeItemCollapsibleState.Collapsed, null, session));
         testTree.addSession("testSess2");
         testTree.mSessionNodes[startLength].contextValue = extension.DS_SESSION_CONTEXT;
         testTree.mSessionNodes[startLength].pattern = "test";
-        testTree.mSessionNodes[startLength].iconPath = utils.applyIcons(testTree.mSessionNodes[1]);
+        const targetIcon = getIconByNode(testTree.mSessionNodes[startLength]);
+        if (targetIcon) {
+            testTree.mSessionNodes[startLength].iconPath = targetIcon.path;
+        }
         testTree.deleteSession(testTree.mSessionNodes[startLength]);
         expect(testTree.mSessionNodes.length).toEqual(startLength);
     });
@@ -389,7 +424,7 @@ describe("DatasetTree Unit Tests", () => {
         createBasicZosmfSession.mockReturnValue(session);
         Object.defineProperty(testTree, "refresh", {value: refresh});
         refresh.mockReset();
-        const pds = new ZoweNode("BRTVS99.PUBLIC", vscode.TreeItemCollapsibleState.Collapsed, testTree.mSessionNodes[1], session);
+        const pds = new ZoweDatasetNode("BRTVS99.PUBLIC", vscode.TreeItemCollapsibleState.Collapsed, testTree.mSessionNodes[1], session);
         await testTree.flipState(pds, true);
         expect(JSON.stringify(pds.iconPath)).toContain("folder-open.svg");
         await testTree.flipState(pds, false);
@@ -399,7 +434,7 @@ describe("DatasetTree Unit Tests", () => {
     });
 
     it("Testing that expand tree is executed for favorites", async () => {
-        const pds = new ZoweNode("Favorites", vscode.TreeItemCollapsibleState.Collapsed, testTree.mSessionNodes[1], session);
+        const pds = new ZoweDatasetNode("Favorites", vscode.TreeItemCollapsibleState.Collapsed, testTree.mSessionNodes[1], session);
         await testTree.flipState(pds, true);
         expect(JSON.stringify(pds.iconPath)).toContain("folder-open.svg");
         await testTree.flipState(pds, false);
@@ -429,7 +464,7 @@ describe("DatasetTree Unit Tests", () => {
                 };
             })
         });
-        const pds = new ZoweNode("BRTVS99.PUBLIC", vscode.TreeItemCollapsibleState.Collapsed, testTree.mSessionNodes[1], sessionwocred);
+        const pds = new ZoweDatasetNode("BRTVS99.PUBLIC", vscode.TreeItemCollapsibleState.Collapsed, testTree.mSessionNodes[1], sessionwocred);
         await testTree.flipState(pds, true);
         expect(JSON.stringify(pds.iconPath)).toContain("folder-open.svg");
         await testTree.flipState(pds, false);
@@ -459,7 +494,8 @@ describe("DatasetTree Unit Tests", () => {
                 };
             })
         });
-        const pds = new ZoweNode("[test]: BRTVS99.PUBLIC", vscode.TreeItemCollapsibleState.Collapsed, testTree.mSessionNodes[1], sessionwocred);
+        const pds = new ZoweDatasetNode("[test]: BRTVS99.PUBLIC", vscode.TreeItemCollapsibleState.Collapsed,
+                                        testTree.mSessionNodes[1], sessionwocred);
         pds.contextValue = extension.DS_SESSION_CONTEXT + extension.FAV_SUFFIX;
         await testTree.flipState(pds, true);
         expect(JSON.stringify(pds.iconPath)).toContain("pattern.svg");
@@ -483,7 +519,7 @@ describe("DatasetTree Unit Tests", () => {
                 };
             })
         });
-        const pds = new ZoweNode("BRTVS99.PUBLIC", vscode.TreeItemCollapsibleState.Collapsed, testTree.mSessionNodes[1], sessionwocred);
+        const pds = new ZoweDatasetNode("BRTVS99.PUBLIC", vscode.TreeItemCollapsibleState.Collapsed, testTree.mSessionNodes[1], sessionwocred);
         await testTree.flipState(pds, true);
         expect(JSON.stringify(pds.iconPath)).not.toEqual("folder-open.svg");
         await testTree.flipState(pds, false);
@@ -537,8 +573,8 @@ describe("DatasetTree Unit Tests", () => {
 
     it("Testing that user filter prompts are executed successfully for favorites", async () => {
         // Executing from favorites
-        const favoriteSearch = new ZoweNode("[aProfile]: HLQ.PROD1.STUFF",
-        vscode.TreeItemCollapsibleState.None, testTree.mSessionNodes[1], session);
+        const favoriteSearch = new ZoweDatasetNode("[aProfile]: HLQ.PROD1.STUFF",
+            vscode.TreeItemCollapsibleState.None, testTree.mSessionNodes[1], session, undefined, undefined, profileOne);
         favoriteSearch.contextValue = extension.DS_SESSION_CONTEXT + extension.FAV_SUFFIX;
         const checkSession = jest.spyOn(testTree, "addSession");
         expect(checkSession).not.toHaveBeenCalled();
@@ -671,7 +707,7 @@ describe("DatasetTree Unit Tests", () => {
         const sessionNode = testTree.mSessionNodes[1];
         const newLabel = "USER.NEW.LABEL";
         testTree.mFavorites = [];
-        const node = new ZoweNode("node", vscode.TreeItemCollapsibleState.Collapsed, sessionNode, null);
+        const node = new ZoweDatasetNode("node", vscode.TreeItemCollapsibleState.Collapsed, sessionNode, null);
 
         testTree.addFavorite(node);
         node.label = `[${sessionNode.label.trim()}]: ${node.label}`;
@@ -684,7 +720,7 @@ describe("DatasetTree Unit Tests", () => {
     it("Should rename a node", async () => {
         const sessionNode = testTree.mSessionNodes[1];
         const newLabel = "USER.NEW.LABEL";
-        const node = new ZoweNode("node", vscode.TreeItemCollapsibleState.Collapsed, sessionNode, null);
+        const node = new ZoweDatasetNode("node", vscode.TreeItemCollapsibleState.Collapsed, sessionNode, null);
         sessionNode.children.push(node);
         testTree.renameNode(sessionNode.label.trim(), "node", newLabel);
 
@@ -703,9 +739,9 @@ describe("DatasetTree Unit Tests", () => {
             protocol: "https",
             type: "basic",
         });
-        const sessNode = new ZoweNode("sestest", vscode.TreeItemCollapsibleState.Expanded, null, session);
+        const sessNode = new ZoweDatasetNode("sestest", vscode.TreeItemCollapsibleState.Expanded, null, session);
         sessNode.contextValue = extension.DS_SESSION_CONTEXT;
-        const dsNode = new ZoweNode("testSess", vscode.TreeItemCollapsibleState.Expanded, sessNode, sessionwocred);
+        const dsNode = new ZoweDatasetNode("testSess", vscode.TreeItemCollapsibleState.Expanded, sessNode, sessionwocred);
         dsNode.contextValue = extension.DS_SESSION_CONTEXT;
         Object.defineProperty(Profiles, "getInstance", {
             value: jest.fn(() => {
@@ -740,12 +776,12 @@ describe("DatasetTree Unit Tests", () => {
             protocol: "https",
             type: "basic",
         });
-        const sessNode = new ZoweNode("sestest", vscode.TreeItemCollapsibleState.Expanded, null, session);
+        const sessNode = new ZoweDatasetNode("sestest", vscode.TreeItemCollapsibleState.Expanded, null, session);
         sessNode.contextValue = extension.DS_SESSION_CONTEXT + extension.FAV_SUFFIX;
-        const dsNode = new ZoweNode("[testSess2]: node", vscode.TreeItemCollapsibleState.Expanded, sessNode, sessionwocred);
+        const dsNode = new ZoweDatasetNode("[testSess2]: node", vscode.TreeItemCollapsibleState.Expanded, sessNode, sessionwocred);
         dsNode.contextValue = extension.DS_SESSION_CONTEXT + extension.FAV_SUFFIX;
         testTree.mSessionNodes.push(dsNode);
-        const dsNode2 = new ZoweNode("testSess2", vscode.TreeItemCollapsibleState.Expanded, sessNode, sessionwocred);
+        const dsNode2 = new ZoweDatasetNode("testSess2", vscode.TreeItemCollapsibleState.Expanded, sessNode, sessionwocred);
         dsNode2.contextValue = extension.DS_SESSION_CONTEXT + extension.FAV_SUFFIX;
         testTree.mSessionNodes.push(dsNode2);
         Object.defineProperty(Profiles, "getInstance", {
@@ -788,12 +824,12 @@ describe("DatasetTree Unit Tests", () => {
             protocol: "https",
             type: "basic",
         });
-        const sessNode = new ZoweNode("sestest", vscode.TreeItemCollapsibleState.Expanded, null, session);
+        const sessNode = new ZoweDatasetNode("sestest", vscode.TreeItemCollapsibleState.Expanded, null, session);
         sessNode.contextValue = extension.DS_SESSION_CONTEXT + extension.FAV_SUFFIX;
-        const dsNode = new ZoweNode("[testSess2]: node", vscode.TreeItemCollapsibleState.Expanded, sessNode, sessionwocred);
+        const dsNode = new ZoweDatasetNode("[testSess2]: node", vscode.TreeItemCollapsibleState.Expanded, sessNode, sessionwocred);
         dsNode.contextValue = extension.DS_SESSION_CONTEXT + extension.FAV_SUFFIX;
         testTree.mSessionNodes.push(dsNode);
-        const dsNode2 = new ZoweNode("testSess2", vscode.TreeItemCollapsibleState.Expanded, sessNode, sessionwocred);
+        const dsNode2 = new ZoweDatasetNode("testSess2", vscode.TreeItemCollapsibleState.Expanded, sessNode, sessionwocred);
         dsNode2.contextValue = extension.DS_SESSION_CONTEXT + extension.FAV_SUFFIX;
         testTree.mSessionNodes.push(dsNode2);
         getConfiguration.mockReturnValue({
@@ -852,9 +888,9 @@ describe("DatasetTree Unit Tests", () => {
             protocol: "https",
             type: "basic",
         });
-        const sessNode = new ZoweNode("sestest", vscode.TreeItemCollapsibleState.Expanded, null, session);
+        const sessNode = new ZoweDatasetNode("sestest", vscode.TreeItemCollapsibleState.Expanded, null, session);
         sessNode.contextValue = extension.DS_SESSION_CONTEXT;
-        const dsNode = new ZoweNode("testSess", vscode.TreeItemCollapsibleState.Expanded, sessNode, sessionwocred);
+        const dsNode = new ZoweDatasetNode("testSess", vscode.TreeItemCollapsibleState.Expanded, sessNode, sessionwocred);
         dsNode.contextValue = extension.DS_SESSION_CONTEXT;
         Object.defineProperty(Profiles, "getInstance", {
             value: jest.fn(() => {
@@ -874,8 +910,8 @@ describe("DatasetTree Unit Tests", () => {
     it("Should find a favorited node", async () => {
         testTree.mFavorites = [];
         const sessionNode = testTree.mSessionNodes[1];
-        const nonFavoritedNode = new ZoweNode("node", vscode.TreeItemCollapsibleState.Collapsed, sessionNode, null);
-        const favoritedNode = new ZoweNode("[testSess]: node", vscode.TreeItemCollapsibleState.Collapsed, sessionNode, null);
+        const nonFavoritedNode = new ZoweDatasetNode("node", vscode.TreeItemCollapsibleState.Collapsed, sessionNode, null);
+        const favoritedNode = new ZoweDatasetNode("[testSess]: node", vscode.TreeItemCollapsibleState.Collapsed, sessionNode, null);
         favoritedNode.contextValue = extension.DS_PDS_CONTEXT + extension.FAV_SUFFIX;
 
         testTree.mFavorites.push(favoritedNode);
@@ -887,8 +923,8 @@ describe("DatasetTree Unit Tests", () => {
 
     it("Should find a non-favorited node", async () => {
         const sessionNode = testTree.mSessionNodes[1];
-        const nonFavoritedNode = new ZoweNode("node", vscode.TreeItemCollapsibleState.Collapsed, sessionNode, null);
-        const favoritedNode = new ZoweNode("[testSess]: node", vscode.TreeItemCollapsibleState.Collapsed, sessionNode, null);
+        const nonFavoritedNode = new ZoweDatasetNode("node", vscode.TreeItemCollapsibleState.Collapsed, sessionNode, null);
+        const favoritedNode = new ZoweDatasetNode("[testSess]: node", vscode.TreeItemCollapsibleState.Collapsed, sessionNode, null);
 
         sessionNode.children.push(nonFavoritedNode);
 
@@ -896,5 +932,21 @@ describe("DatasetTree Unit Tests", () => {
 
         expect(foundNode).toBe(nonFavoritedNode);
         sessionNode.children.pop();
+    });
+
+    it("tests utils error handling", async () => {
+        showQuickPick.mockReset();
+        showInputBox.mockReset();
+        showErrorMessage.mockReset();
+
+        const label = "invalidCred";
+        // tslint:disable-next-line: object-literal-key-quotes
+        const error = {"mDetails": {"errorCode": 401}};
+        await utils.errorHandling(error, label);
+
+        expect(showErrorMessage.mock.calls.length).toEqual(1);
+        expect(showErrorMessage.mock.calls[0][0]).toEqual("Invalid Credentials. Please ensure the username and password for " +
+        `\n${label}\n` +
+        " are valid or this may lead to a lock-out.");
     });
 });
