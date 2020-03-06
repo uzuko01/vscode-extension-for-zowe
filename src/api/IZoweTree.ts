@@ -60,7 +60,7 @@ export interface IZoweTree<T> extends vscode.TreeDataProvider<T> {
      * Refreshes an element of the tree
      * @param favorite Node to refresh
      */
-    refreshElement(node: IZoweNodeType): void;
+    refreshElement(node: IZoweNodeType, ignoreDirty?: boolean): void;
     /**
      * Event Emitters used to notify subscribers that the refresh event has fired
      */

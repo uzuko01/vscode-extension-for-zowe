@@ -19,6 +19,7 @@ import { IZoweDatasetTreeNode } from "./api/IZoweTreeNode";
 import { ZoweTreeNode } from "./abstract/ZoweTreeNode";
 import { ZoweExplorerApiRegister } from "./api/ZoweExplorerApiRegister";
 import { getIconByNode } from "./generators/icons";
+import { pagination } from "./config/constants";
 const localize = nls.config({ messageFormat: nls.MessageFormat.file })();
 
 /**
@@ -33,6 +34,8 @@ export class ZoweDatasetNode extends ZoweTreeNode implements IZoweDatasetTreeNod
     public pattern = "";
     public dirty = extension.ISTHEIA;  // Make sure this is true for theia instances
     public children: ZoweDatasetNode[] = [];
+    // TODO: Move to cache service and save selected page
+    public fullChildrenList: ZoweDatasetNode[] = [];
 
     /**
      * Creates an instance of ZoweDatasetNode
@@ -156,7 +159,11 @@ export class ZoweDatasetNode extends ZoweTreeNode implements IZoweDatasetTreeNod
             return this.children = [new ZoweDatasetNode(localize("getChildren.noDataset", "No datasets found"),
             vscode.TreeItemCollapsibleState.None, this, null, extension.INFORMATION_CONTEXT)];
         } else {
-            return this.children = Object.keys(elementChildren).sort().map((labels) => elementChildren[labels]);
+            const children = Object.keys(elementChildren).sort().map((labels) => elementChildren[labels]);
+            this.children = children.slice(0, pagination.itemsPerPage);
+            this.fullChildrenList = children;
+
+            return this.children;
         }
     }
 
@@ -181,6 +188,25 @@ export class ZoweDatasetNode extends ZoweTreeNode implements IZoweDatasetTreeNod
         this.etag = etagValue;
     }
 
+    /**
+     * Getter for label which has format ready to list retrieval of other operations.
+     *
+     * @returns {string}
+     */
+    public get retrievableLabel(): string {
+        if (this.label) {
+            let label = this.label.trim();
+
+            if (this.label.startsWith("[")) {
+                label = this.label.split(":").pop().trim();
+            }
+
+            return label;
+        }
+
+        return "";
+    }
+
     private async getDatasets(): Promise<zowe.IZosFilesResponse[]> {
         const responses: zowe.IZosFilesResponse[] = [];
         try {
@@ -191,12 +217,7 @@ export class ZoweDatasetNode extends ZoweTreeNode implements IZoweDatasetTreeNod
                     responses.push(await ZoweExplorerApiRegister.getMvsApi(this.getProfile()).dataSet(pattern.trim(), {attributes: true}));
                 }
             } else {
-                // Check if node is a favorite
-                let label = this.label.trim();
-                if (this.label.startsWith("[")) {
-                    label = this.label.substring(this.label.indexOf(":") + 1).trim();
-                }
-                responses.push(await ZoweExplorerApiRegister.getMvsApi(this.getProfile()).allMembers(label, {attributes: true}));
+                responses.push(await ZoweExplorerApiRegister.getMvsApi(this.getProfile()).allMembers(this.retrievableLabel, {attributes: true}));
             }
         } catch (err) {
             await utils.errorHandling(err, this.label, localize("getChildren.error.response", "Retrieving response from ") + `zowe.List`);

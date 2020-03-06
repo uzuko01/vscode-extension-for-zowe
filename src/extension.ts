@@ -37,6 +37,7 @@ import { ZoweExplorerApiRegister } from "./api/ZoweExplorerApiRegister";
 import { ZoweDatasetNode } from "./ZoweDatasetNode";
 import { KeytarCredentialManager } from "./KeytarCredentialManager";
 import { getIconByNode } from "./generators/icons";
+import * as TreeWebView from "./webviews/treeWebView/TreeWebView";
 
 // Localization support
 const localize = nls.config({messageFormat: nls.MessageFormat.file})();
@@ -212,6 +213,8 @@ export async function activate(context: vscode.ExtensionContext): Promise<ZoweEx
         vscode.commands.registerCommand("zowe.renameDataSet", (node) => datasetProvider.rename(node));
         vscode.commands.registerCommand("zowe.copyDataSet", (node) => copyDataSet(node));
         vscode.commands.registerCommand("zowe.pasteDataSet", (node) => pasteDataSet(node, datasetProvider));
+        vscode.commands.registerCommand("zowe.inspectDataSet", (node) => inspectDataSet(node, context.extensionPath));
+        vscode.commands.registerCommand("zowe.refreshDataSetInTree", (node) => refreshDatasetInTree(node, datasetProvider));
         vscode.commands.registerCommand("zowe.renameDataSetMember", (node) => datasetProvider.rename(node));
         vscode.commands.registerCommand("zowe.hMigrateDataSet", (node) => hMigrateDataSet(node));
         vscode.workspace.onDidChangeConfiguration(async (e) => {
@@ -1599,6 +1602,24 @@ export async function refreshPS(node: IZoweDatasetTreeNode) {
             await utils.errorHandling(err, node.getProfileName(), err.message);
         }
     }
+}
+
+export async function inspectDataSet(node: ZoweDatasetNode, basePath: string) {
+    node.children = [];
+    node.dirty = true;
+    await node.getChildren();
+
+    const view = TreeWebView.generateInstance(node.label, {basePath, node});
+    view.setList(node.fullChildrenList.map((entry) => {
+        return {
+            name: entry.label,
+            type: "DATASET MEMBER"
+        };
+    }));
+}
+
+export async function refreshDatasetInTree(node: IZoweDatasetTreeNode, datasetFileProvider: IZoweTree<IZoweDatasetTreeNode>) {
+    await datasetFileProvider.refreshElement(node, true);
 }
 
 export async function refreshUSSInTree(node: IZoweUSSTreeNode, ussFileProvider: IZoweTree<IZoweUSSTreeNode>) {

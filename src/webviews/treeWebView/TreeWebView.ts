@@ -13,11 +13,11 @@ import * as vscode from "vscode";
 import { getContentForWebView, injectConstantsBlockToHTML, unifyContentOfHTML } from "../../utils/webView";
 import * as path from "path";
 import { IWebViewAction } from "../types";
-import { ZoweNode } from "../../ZoweNode";
+import { ZoweDatasetNode } from "../../ZoweDatasetNode";
 import { ZoweUSSNode } from "../../ZoweUSSNode";
 import { pagination } from "../../config/constants";
 
-type CombinedNode = ZoweNode | ZoweUSSNode;
+type CombinedNode = ZoweDatasetNode | ZoweUSSNode;
 
 export interface ITreeWebViewItem {
     name: string;
