@@ -123,6 +123,8 @@ node('ca-jenkins-agent') {
     }
   )
 
+  pipeline.sonarScan()
+
   // Check for Vulnerabilities
   pipeline.checkVulnerabilities()
 
