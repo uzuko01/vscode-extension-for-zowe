@@ -9,7 +9,7 @@
 *
 */
 
-@Library('shared-pipelines') import org.zowe.pipelines.nodejs.NodeJSPipeline
+@Library('shared-pipelines@sonar-scan') import org.zowe.pipelines.nodejs.NodeJSPipeline
 
 node('ca-jenkins-agent') {
   // This is the product name used by the build machine to store information about the builds
