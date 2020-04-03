@@ -12,3 +12,7 @@ vscode-extension-for-zowe*.vsix
 .history
 .DS_Store
 .idea
+
+# Sonar Files
+.sonar_lock
+.scannerwork/
