@@ -9,82 +9,25 @@
 *
 */
 
-@Library('shared-pipelines') import org.zowe.pipelines.nodejs.NodeJSPipeline
+node('ibm-jenkins-slave-nvm') {
+  def lib = library("jenkins-library").org.zowe.jenkins_shared_library
 
-node('ca-jenkins-agent') {
-  // This is the product name used by the build machine to store information about the builds
-  def PRODUCT_NAME = "Zowe Explorer"
+  def pipeline = lib.pipelines.nodejs.NodeJSPipeline.new(this)
 
-  // This is the what should be considered the master branch (for deployment purposes)
-  def MASTER_BRANCH = "master"
+  pipeline.admins.add("jackjia")
 
-  // Artifactory Details
-  def ARTIFACTORY_CREDENTIALS_ID = "zowe.jfrog.io"
-  def ARTIFACTORY_UPLOAD_URL = "https://zowe.jfrog.io/zowe/libs-release-local/org/zowe/vscode"
+  pipeline.setup(
+    packageName: 'org.zowe.vscode-extension'
+  )
 
-  // Other Credential IDs
-  def PUBLISH_TOKEN = "vsce-publish-key"
-  def ZOWE_ROBOT_TOKEN = "zowe-robot-github"
-  def CODECOV_CREDENTIALS_ID = 'CODECOV_ZOWE_VSCODE'
-
-  // Testing related variables
-  def TEST_ROOT = "results"
-  def UNIT_TEST_ROOT = "$TEST_ROOT/unit"
-  def UNIT_JUNIT_OUTPUT = "$UNIT_TEST_ROOT/junit.xml"
-  def SYSTEM_TEST_ROOT = "$TEST_ROOT/system"
-  def SYSTEM_JUNIT_OUTPUT = "$SYSTEM_TEST_ROOT/junit.xml"
-
-  // Initialize the pipeline
-  def pipeline = new NodeJSPipeline(this)
-
-  // Build admins, users that can approve the build and receieve emails for all protected branch builds.
-  pipeline.admins.add("stonecc", "zfernand0", "mikebauerca")
-
-  // Comma-separated list of emails that should receive notifications about every build on every branch : )
-  // There are plans to send branch-specific emails to the developers in questions. For more information please look for emailProviders
-  pipeline.emailList = "fernando.rijocedeno@broadcom.com"
-
-  // Protected branch property definitions
-  pipeline.protectedBranches.addMap([
-      [name: "master", tag: "latest", dependencies: ["@zowe/cli": "zowe-v1-lts"]]
-  ])
-
-  // Git configuration information
-  pipeline.gitConfig = [
-      email: 'zowe.robot@gmail.com',
-      credentialsId: 'zowe-robot-github'
-  ]
-
-  // Initialize the pipeline library, should create 5 steps
-  pipeline.setup()
-
-  // Lint the source code
-  pipeline.lint()
-
-  // Build the application
+  // build stage is required
   pipeline.build(
-      timeout: [ time: 10, unit: 'MINUTES' ],
-      operation: {
-        // Create a dummy TestProfileData in order to build the source code. See issue #556
-        sh "cp resources/testProfileData.example.ts resources/testProfileData.ts"
-        sh "npm run build"
-      },
-      archiveOperation: {
-        // Gather details for build archives
-        def vscodePackageJson = readJSON file: "package.json"
-        def date = new Date()
-        String buildDate = date.format("yyyyMMddHHmmss")
-        def fileName = "vscode-extension-for-zowe-v${vscodePackageJson.version}-${BRANCH_NAME}-${buildDate}"
-
-        // Generate a vsix for archiving purposes
-        sh "npx vsce package -o ${fileName}.vsix"
-
-        // Upload vsix to Artifactory
-        withCredentials([usernamePassword(credentialsId: ARTIFACTORY_CREDENTIALS_ID, usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
-          def uploadUrlArtifactory = "https://zowe.jfrog.io/zowe/libs-snapshot-local/org/zowe/vscode/${fileName}.vsix"
-          sh "curl -u ${USERNAME}:${PASSWORD} --data-binary \"@${fileName}.vsix\" -H \"Content-Type: application/octet-stream\" -X PUT ${uploadUrlArtifactory}"
-        }
-      }
+    timeout: [ time: 10, unit: 'MINUTES' ],
+    operation: {
+      // Create a dummy TestProfileData in order to build the source code. See issue #556
+      sh "cp resources/testProfileData.example.ts resources/testProfileData.ts"
+      sh "npm run build"
+    }
   )
 
   // Perform Unit Tests and capture the results
@@ -95,98 +38,37 @@ node('ca-jenkins-agent') {
       },
       timeout: [ time: 10, unit: 'MINUTES' ],
       environment: [
-        JEST_JUNIT_OUTPUT: UNIT_JUNIT_OUTPUT,
+        JEST_JUNIT_OUTPUT: "results/unit/junit.xml",
         JEST_SUIT_NAME: "Unit Tests",
         JEST_JUNIT_ANCESTOR_SEPARATOR: " > ",
         JEST_JUNIT_CLASSNAME: "Unit.{classname}",
         JEST_JUNIT_TITLE: "{title}",
-        JEST_STARE_RESULT_DIR: "${UNIT_TEST_ROOT}/jest-stare",
+        JEST_STARE_RESULT_DIR: "results/unit/jest-stare",
         JEST_STARE_RESULT_HTML: "index.html"
       ],
-      testResults: [dir: "${UNIT_TEST_ROOT}/jest-stare", files: "index.html", name: "${PRODUCT_NAME} - Unit Test Report"],
-      coverageResults: [dir: "${UNIT_TEST_ROOT}/coverage/lcov-report", files: "index.html", name: "${PRODUCT_NAME} - Unit Test Coverage Report"],
-      junitOutput: UNIT_JUNIT_OUTPUT,
-      cobertura: [
-        coberturaReportFile: "${UNIT_TEST_ROOT}/coverage/cobertura-coverage.xml",
-        maxNumberOfBuilds: 20,
-        sourceEncoding: 'ASCII'
+      junit         : "results/unit/junit.xml",
+      cobertura     : [
+        coberturaReportFile       : "results/unit/coverage/cobertura-coverage.xml"
+      ],
+      htmlReports   : [
+        [dir: "results/unit/jest-stare", files: "index.html", name: "Zowe Explorer - Unit Test Report"],
+        [dir: "results/unit/coverage/lcov-report", files: "index.html", name: "Zowe Explorer - Unit Test Coverage Report"],
       ]
   )
 
-  // Upload Reports to Codecov. This may be replaced with Sonar Cloud in the near future. See #473
-  pipeline.createStage(
-    name: "Codecov",
-    stage: {
-      withCredentials([usernamePassword(credentialsId: CODECOV_CREDENTIALS_ID, usernameVariable: 'CODECOV_USERNAME', passwordVariable: 'CODECOV_TOKEN')]) {
-        sh "curl -s https://codecov.io/bash | bash -s"
-      }
-    }
+  // we need sonar scan
+  pipeline.sonarScan(
+    scannerTool     : lib.Constants.DEFAULT_LFJ_SONARCLOUD_SCANNER_TOOL,
+    scannerServer   : lib.Constants.DEFAULT_LFJ_SONARCLOUD_SERVER,
+    allowBranchScan : lib.Constants.DEFAULT_LFJ_SONARCLOUD_ALLOW_BRANCH,
+    failBuild       : lib.Constants.DEFAULT_LFJ_SONARCLOUD_FAIL_BUILD
   )
 
-  // Check for Vulnerabilities
-  pipeline.checkVulnerabilities()
+  // define we need publish stage
+  // pipeline.publish()
 
-  // Publish a new version of the extensions if needed
-  pipeline.createStage(
-    name: "Publish",
-    shouldExecute: { env.BRANCH_NAME == MASTER_BRANCH },
-    timeout: [ time: 10, unit: 'MINUTES' ],
-    stage: {
-      // Gather details about the extension for comparison
-      def vscodePackageJson = readJSON file: "package.json"
-      def extensionMetadata = sh(returnStdout: true, script: "npx vsce show ${vscodePackageJson.publisher}.${vscodePackageJson.name} --json").trim()
-      def extensionInfo = readJSON text: extensionMetadata
-
-      // Check if we need to publish a new version
-      if (extensionInfo.versions[0].version == vscodePackageJson.version) {
-        echo "No new version to publish at this time (${vscodePackageJson.version})"
-
-        // Will stop here if there wasn't a requirement to publish anything
-        return;
-      }
-
-      // Publish new version
-      echo "Publishing version ${vscodePackageJson.version} since it's different from ${extensionInfo.versions[0].version}"
-      withCredentials([string(credentialsId: PUBLISH_TOKEN, variable: 'TOKEN')]) {
-        sh "npx vsce publish -p $TOKEN"
-      }
-
-      // Prepare GitHub Release
-      def version = "v${vscodePackageJson.version}"
-      def versionName = "vscode-extension-for-zowe-v${vscodePackageJson.version}"
-      sh "npx vsce package -o ${versionName}.vsix"
-
-      // Upload Final VSIX to Artifactory
-      withCredentials([usernamePassword(credentialsId: ARTIFACTORY_CREDENTIALS_ID, usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
-        def uploadUrlArtifactory = "${ARTIFACTORY_UPLOAD_URL}/${versionName}.vsix"
-        sh "curl -u ${USERNAME}:${PASSWORD} --data-binary \"@${versionName}.vsix\" -H \"Content-Type: application/octet-stream\" -X PUT ${uploadUrlArtifactory}"
-      }
-
-      // Create the GitHub Release
-      withCredentials([usernamePassword(credentialsId: ZOWE_ROBOT_TOKEN, usernameVariable: 'USERNAME', passwordVariable: 'TOKEN')]) {
-        sh "git push --tags https://$TOKEN:x-oauth-basic@github.com/zowe/vscode-extension-for-zowe.git"
-
-        // Grab changelog, convert to unix line endings, get changes under current version, publish release to github with changes in body
-        def releaseVersion = sh(returnStdout: true, script: "echo ${version} | cut -c 2-").trim()
-        sh "npm install ssp-dos2unix"
-        sh "node ./scripts/d2uChangelog.js"
-        def releaseChanges = sh(returnStdout: true, script: "awk -v ver=${releaseVersion} '/## / {if (p) { exit }; if (\$2 ~ ver) { p=1; next} } p && NF' CHANGELOG.md | tr \\\" \\` | sed -z 's/\\n/\\\\n/g'").trim()
-
-        // Gather details about the GitHub APIs used to publish a release
-        def releaseAPI = "repos/zowe/vscode-extension-for-zowe/releases"
-        def releaseDetails = "{\"tag_name\":\"$version\",\"target_commitish\":\"master\",\"name\":\"$version\",\"body\":\"$releaseChanges\",\"draft\":false,\"prerelease\":false}"
-        def releaseUrl = "https://$TOKEN:x-oauth-basic@api.github.com/${releaseAPI}"
-
-        // Create the release
-        def releaseCreated = sh(returnStdout: true, script: "curl -H \"Content-Type: application/json\" -X POST -d '${releaseDetails}' ${releaseUrl}").trim()
-        def releaseParsed = readJSON text: releaseCreated
-
-        // Upload vsix to the release that was just created
-        def uploadUrl = "https://$TOKEN:x-oauth-basic@uploads.github.com/${releaseAPI}/${releaseParsed.id}/assets?name=${versionName}.vsix"
-        sh "curl -X POST --data-binary @${versionName}.vsix -H \"Content-Type: application/octet-stream\" ${uploadUrl}"
-      }
-    }
-  )
+  // define we need release stage
+  // pipeline.release()
 
   // Once called, no stages can be added and all added stages will be executed.
   // On completion appropriate emails will be sent out by the shared library.
