@@ -233,13 +233,32 @@ export async function willForceUpload(node: IZoweDatasetTreeNode | IZoweUSSTreeN
                 title
             }, () => {
                 if (isZoweDatasetTreeNode(node)) {
-                    return ZoweExplorerApiRegister.getMvsApi(node ? node.getProfile(): profile).putContents(doc.fileName,
+                    const prof = node ? node.getProfile(): profile;
+                    if (prof.profile.encoding) {
+                        uploadOptions.encoding = prof.profile.encoding;
+                    }
+                    return ZoweExplorerApiRegister.getMvsApi(prof).putContents(doc.fileName,
                         remotePath,
                         uploadOptions);
                 } else {
-                    return ZoweExplorerApiRegister.getUssApi(profile).putContents(
-                        doc.fileName, remotePath, binary, null, null, returnEtag);
+
+                    // if new api method exists, use it
+                    if (ZoweExplorerApiRegister.getUssApi(profile).putContent) {
+                        return ZoweExplorerApiRegister.getUssApi(profile).putContent(
+                            doc.fileName, remotePath,
+                            {
+                                binary,
+                                localEncoding: null,
+                                etag: null,
+                                returnEtag,
+                                encoding: profile.profile.encoding
+                            });
+                    } else {
+                        return ZoweExplorerApiRegister.getUssApi(profile).putContents(
+                            doc.fileName, remotePath, binary, null, null, returnEtag);
                     }
+                }
+
             });
             uploadResponse.then((response) => {
                 if (response.success) {
