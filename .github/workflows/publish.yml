@@ -1,0 +1,42 @@
+name: Publish
+
+on:
+  push:
+    branches:
+    - master
+
+jobs:
+  deploy:
+    # Do not run this job on forks.
+    if: github.repository == 'zowe/vscode-extension-for-zowe'
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - name: Use Node.js 12.x
+      uses: actions/setup-node@v1
+      with:
+        node-version: 12.x
+
+    - run: npm ci
+
+    - run: npm run build
+
+    - name: Version and Publish
+      id: publish
+      uses: tjohnsonBCM/node-versioner@master
+      with:
+        github-artifacts: 'vscode-extension-for-zowe-*.vsix'
+        prepublish-cmd: npx vsce package
+        repo-token: ${{ secrets.GITHUB_TOKEN }}
+        vsce-token: ${{ secrets.VSCE_TOKEN }}
+
+    - name: Curl to Artifactory
+      uses: wei/curl@v1
+      env:
+        ARTIFACTORY_UPLOAD_URL: https://zowe.jfrog.io/zowe/libs-release-local/org/zowe/vscode
+        VSIX_FILE: vscode-extension-for-zowe-${{ steps.publish.output.new-version }}.vsix
+      with:
+        args: '-u "${{ secrets.ARTIFACTORY_CREDENTIALS }}" --data-binary @${VSIX_FILE} -H "Content-Type: application/octet-stream" -X PUT ${ARTIFACTORY_UPLOAD_URL}/${VSIX_FILE}'
