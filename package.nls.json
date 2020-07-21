@@ -12,6 +12,7 @@
     "addFavorite": "Add to Favorites",
     "uss.addFavorite": "Add to Favorites",
     "addSession": "Add Profile",
+    "ssoLogin": "Log in to API ML",
     "editSession": "Update Profile",
     "createDataset": "Create New Data Set",
     "createMember": "Create New Member",

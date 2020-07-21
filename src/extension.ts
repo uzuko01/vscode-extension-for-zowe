@@ -33,6 +33,7 @@ import SpoolProvider from "./SpoolProvider";
 import { ZoweExplorerApiRegister } from "./api/ZoweExplorerApiRegister";
 import { KeytarCredentialManager } from "./KeytarCredentialManager";
 import { linkProfileDialog } from "./utils/profileLink";
+import { ssoLoginDialog } from "./utils/ssoLogin";
 import * as nls from "vscode-nls";
 declare const __webpack_require__: typeof require;
 declare const __non_webpack_require__: typeof require;
@@ -183,6 +184,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<ZoweEx
 
 function initDatasetProvider(context: vscode.ExtensionContext, datasetProvider: IZoweTree<IZoweDatasetTreeNode>) {
     vscode.commands.registerCommand("zowe.addSession", async () => datasetProvider.createZoweSession(datasetProvider));
+    vscode.commands.registerCommand("zowe.ssoLogin", async () => ssoLoginDialog());
     vscode.commands.registerCommand("zowe.addFavorite", async (node) => datasetProvider.addFavorite(node));
     vscode.commands.registerCommand("zowe.refreshAll", () => dsActions.refreshAll(datasetProvider));
     vscode.commands.registerCommand("zowe.refreshNode", (node) => dsActions.refreshPS(node));

@@ -1,0 +1,6 @@
+{
+    "ssoLogin.noProfilesLoaded": "No base profiles available",
+    "ssoLogin.selectBaseProfile": "Select a base profile to log in with",
+    "ssoLogin.successful": "Log in with {0} was successful",
+    "ssoLogin.unableToLogin": "Unable to login. "
+}

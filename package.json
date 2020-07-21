@@ -116,6 +116,14 @@
         }
       },
       {
+        "command": "zowe.ssoLogin",
+        "title": "%ssoLogin%",
+        "icon": {
+          "light": "./resources/light/login.svg",
+          "dark": "./resources/dark/login.svg"
+        }
+      },
+      {
         "command": "zowe.editSession",
         "title": "%editSession%",
         "icon": {
@@ -486,6 +494,11 @@
         {
           "when": "view == zowe.explorer",
           "command": "zowe.addSession",
+          "group": "navigation"
+        },
+        {
+          "when": "view == zowe.explorer",
+          "command": "zowe.ssoLogin",
           "group": "navigation"
         },
         {
@@ -1255,7 +1268,7 @@
     "webpack-cli": "^3.3.11"
   },
   "dependencies": {
-    "@zowe/cli": "6.15.0",
+    "@zowe/cli": "^6.17.2",
     "fs-extra": "8.0.1",
     "isbinaryfile": "4.0.4",
     "js-yaml": "3.13.1",
