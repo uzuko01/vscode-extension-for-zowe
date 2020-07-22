@@ -81,7 +81,7 @@ export async function downloadSpool(job: IZoweJobTreeNode){
 export async function getSpoolContent(jobsProvider: IZoweTree<IZoweJobTreeNode>, session: string, spool: zowe.IJobFile) {
     const zosmfProfile = Profiles.getInstance().loadNamedProfile(session);
     // This has a direct access to Profiles checkcurrentProfile() because I am able to get the profile now.
-    await Profiles.getInstance().checkCurrentProfile(zosmfProfile);
+    await Profiles.getInstance().checkCurrentProfile(zosmfProfile, true);
     if (Profiles.getInstance().validProfile === ValidProfileEnum.VALID) {
         try {
             const uri = encodeJobFile(session, spool);
@@ -119,7 +119,8 @@ export async function refreshJobsServer(node: IZoweJobTreeNode, jobsProvider: IZ
  */
 export async function downloadJcl(job: Job) {
     try {
-        const jobJcl = await ZoweExplorerApiRegister.getJesApi(job.getProfile()).getJclForJob(job.job);
+        const theApi = ZoweExplorerApiRegister.getJesApi(job.getProfile());
+        const jobJcl = await theApi.getJclForJob(job.job);
         const jclDoc = await vscode.workspace.openTextDocument({language: "jcl", content: jobJcl});
         await vscode.window.showTextDocument(jclDoc);
     } catch (error) {

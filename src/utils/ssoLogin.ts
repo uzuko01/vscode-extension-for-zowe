@@ -39,7 +39,7 @@ export async function ssoLoginDialog() {
             const zosmfDefault = await Profiles.getInstance().getDefaultProfile("zosmf");
             const origBaseProfile = (await profileManager.loadAll()).find((profile) => profile.name === chosenBase);
 
-            // TODO prompt for user and password
+            // TODO prompt for parameters using getSession or getValidSession
             const updSession = new Session({
                 hostname: origBaseProfile.profile.host,
                 port: origBaseProfile.profile.port,
@@ -68,6 +68,7 @@ export async function ssoLoginDialog() {
 
             try {
                 await profileManager.update(updateParms);
+                await Profiles.getInstance().refresh();
             } catch (error) {
                 vscode.window.showErrorMessage(error.message);
                 return;

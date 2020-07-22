@@ -138,7 +138,7 @@ export class ZosJobsProvider extends ZoweTreeProvider implements IZoweTree<IZowe
             if (contextually.isFavoriteContext(element)) {
                 return this.mFavorites;
             }
-            await Profiles.getInstance().checkCurrentProfile(element.getProfile());
+            await Profiles.getInstance().checkCurrentProfile(element.getProfile(), true);
             return element.getChildren();
         }
         return this.mSessionNodes;
@@ -204,7 +204,7 @@ export class ZosJobsProvider extends ZoweTreeProvider implements IZoweTree<IZowe
         this.log = log;
         this.log.debug(localize("initializeFavorites.log.debug", "initializing favorites"));
         const lines: string[] = this.mHistory.readFavorites();
-        lines.forEach((line) => {
+        for (const line of lines) {
             const profileName = line.substring(1, line.lastIndexOf("]"));
             const nodeName = (line.substring(line.indexOf(":") + 1, line.indexOf("{"))).trim();
             const sesName = line.substring(1, line.lastIndexOf("]")).trim();
@@ -213,7 +213,7 @@ export class ZosJobsProvider extends ZoweTreeProvider implements IZoweTree<IZowe
                 let favJob: Job;
                 if (line.substring(line.indexOf("{") + 1, line.lastIndexOf("}")).startsWith(globals.JOBS_JOB_CONTEXT)) {
                     favJob = new Job(line.substring(0, line.indexOf("{")), vscode.TreeItemCollapsibleState.Collapsed, this.mFavoriteSession,
-                        ZosmfSession.createBasicZosmfSession(zosmfProfile.profile), new JobDetail(nodeName), zosmfProfile);
+                    (await Profiles.getInstance().getValidSession(zosmfProfile.profile, zosmfProfile.name)), new JobDetail(nodeName), zosmfProfile);
                     favJob.contextValue = globals.JOBS_JOB_CONTEXT + globals.FAV_SUFFIX;
                     favJob.command = {command: "zowe.zosJobsSelectjob", title: "", arguments: [favJob]};
                 } else { // for search
@@ -221,7 +221,7 @@ export class ZosJobsProvider extends ZoweTreeProvider implements IZoweTree<IZowe
                         line.substring(0, line.indexOf("{")),
                         vscode.TreeItemCollapsibleState.None,
                         this.mFavoriteSession,
-                        ZosmfSession.createBasicZosmfSession(zosmfProfile.profile),
+                        (await Profiles.getInstance().getValidSession(zosmfProfile.profile, zosmfProfile.name)),
                         null, zosmfProfile
                     );
                     favJob.command = {command: "zowe.jobs.search", title: "", arguments: [favJob]};
@@ -244,7 +244,7 @@ export class ZosJobsProvider extends ZoweTreeProvider implements IZoweTree<IZowe
                 errorHandling(e, null, errMessage);
                 return;
             }
-        });
+        }
     }
 
     /**
@@ -304,7 +304,7 @@ export class ZosJobsProvider extends ZoweTreeProvider implements IZoweTree<IZowe
         } else {
             sesNamePrompt = node.label;
         }
-        await this.checkCurrentProfile(node);
+        await this.checkCurrentProfile(node, true);
         if (Profiles.getInstance().validProfile === ValidProfileEnum.VALID) {
             if (contextually.isSessionNotFav(node)) { // This is the profile object context
                 if (hasHistory) { // Check if user has created some history
@@ -564,16 +564,16 @@ export class ZosJobsProvider extends ZoweTreeProvider implements IZoweTree<IZowe
      * Adds a single session to the jobs tree
      *
      */
-    private async addSingleSession(zosmfProfile: IProfileLoaded) {
-        if (zosmfProfile) {
+    private async addSingleSession(profileLoaded: IProfileLoaded) {
+        if (profileLoaded) {
             // If session is already added, do nothing
-            if (this.mSessionNodes.find((tempNode) => tempNode.label.trim() === zosmfProfile.name)) {
+            if (this.mSessionNodes.find((tempNode) => tempNode.label.trim() === profileLoaded.name)) {
                 return;
             }
             // Uses loaded profile to create a zosmf session with Zowe
-            const session = ZosmfSession.createBasicZosmfSession(zosmfProfile.profile);
+            const session = await Profiles.getInstance().getValidSession(profileLoaded.profile, profileLoaded.name);
             // Creates ZoweNode to track new session and pushes it to mSessionNodes
-            const node = new Job(zosmfProfile.name, vscode.TreeItemCollapsibleState.Collapsed, null, session, null, zosmfProfile);
+            const node = new Job(profileLoaded.name, vscode.TreeItemCollapsibleState.Collapsed, null, session, null, profileLoaded);
             node.contextValue = globals.JOBS_SESSION_CONTEXT;
             const icon = getIconByNode(node);
             if (icon) {
@@ -581,7 +581,7 @@ export class ZosJobsProvider extends ZoweTreeProvider implements IZoweTree<IZowe
             }
             node.dirty = true;
             this.mSessionNodes.push(node);
-            this.mHistory.addSession(zosmfProfile.name);
+            this.mHistory.addSession(profileLoaded.name);
         }
     }
 }
