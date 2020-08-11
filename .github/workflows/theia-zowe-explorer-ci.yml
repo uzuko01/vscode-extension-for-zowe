@@ -26,7 +26,7 @@ jobs:
       - run: ls -la "${{ env.DIST }}/vscode-extension-for-zowe.vsix"
 
       - name: Start Theia
-        run: docker run --name theia --init -d -p 3000:3000 -v "${DIST}:/home/theia/.theia" theiaide/theia
+        run: docker run --name theia --init -d -p 3000:3000 -v "${{ env.DIST }}:/home/theia/.theia" theiaide/theia
       # NOTE(Kelosky): alternatively, we could run docker via something like this; however, we cannot hot reload 
       #                hosted VS Code extensions after theia is started (at least at the time this was written).
       # services:
