@@ -38,8 +38,7 @@ node('ibm-jenkins-slave-dind') {
   pipeline.build(
     operation: {
       ansiColor('xterm') {
-        sh "cp resources/testProfileData.example.ts resources/testProfileData.ts"
-        pipeline.nvmShell "npm run build"
+        pipeline.nvmShell "yarn run build"
 
         // Generate a vsix for archiving purposes
         sh "mkdir -p ${packagingDir}/plugins && mkdir -p ${packagingDir}/screenshots && chmod -R 777 ${packagingDir}"
@@ -75,7 +74,7 @@ node('ibm-jenkins-slave-dind') {
     timeout       : [ time: 10, unit: 'MINUTES' ],
     operation     : {
       ansiColor('xterm') {
-        pipeline.nvmShell "npm run test:theia"
+        pipeline.nvmShell "yarn run test:theia"
       }
     },
     // FIXME: once we publish test result as junit, we can disable below line

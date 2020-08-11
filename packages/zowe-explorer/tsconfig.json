@@ -32,7 +32,6 @@
         "./node_modules/vscode/lib/*",
         // Needed for integration tests to work:
         "__tests__",
-        "resources/testProfileData.example.ts",
         "resources/testProfileData.ts"
     ]
 }
