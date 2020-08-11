@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      DIST: "${{ env.PWD }}/packages/zowe-explorer/dist"
+      DIST: $GITHUB_ACTION_PATH/packages/zowe-explorer/dist
 
     steps:
       - uses: actions/checkout@v2
