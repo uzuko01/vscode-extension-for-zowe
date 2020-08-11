@@ -34,7 +34,7 @@ jobs:
       run: yarn audit --level=moderate
       if: matrix.os == 'windows-latest' && matrix.node-version == '12.x'
 
-    - run: yarn run build
+    - run: yarn build
 
     - run: yarn test
       env:
@@ -46,7 +46,7 @@ jobs:
       # if: matrix.os == 'windows-latest' && matrix.node-version == '12.x'
       with:
         name: results
-        path: results/
+        path: packages/zowe-explorer/results/
 
     # Run codecov upload for only one run
     - name: Upload Results to Codecov from Windows / Node 12.x
