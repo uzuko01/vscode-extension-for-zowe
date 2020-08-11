@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      DIST: "${PWD}/packages/zowe-explorer/dist"
+      DIST: "${{ env.PWD }}/packages/zowe-explorer/dist"
 
     steps:
       # check out source
