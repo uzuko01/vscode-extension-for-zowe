@@ -34,6 +34,6 @@
     "pretty": "yarn workspaces run pretty",
     "build": "yarn workspaces run build",
     "test": "yarn workspaces run test",
-    "package": "yarn workspaces run package"
+    "package": "yarn workspaces run package && node scripts/cp-pack.js zowe-explorer vscode-extension-for-zowe vsix"
   }
 }
