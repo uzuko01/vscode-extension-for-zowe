@@ -43,7 +43,7 @@ jobs:
         uses: actions/upload-artifact@v1
         with:
           name: vscode-extension-for-zowe.vsix
-          path: "${DIST}/vscode-extension-for-zowe.vsix"
+          path: "${{ env.DIST }}/vscode-extension-for-zowe.vsix"
 
       - name: Verify plugin loaded
         run: docker exec -i theia ls -la .theia/plugins
