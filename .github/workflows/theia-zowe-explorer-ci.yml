@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      DIST: '${PWD}/packages/zowe-explorer/dist'
+      DIST: "${PWD}/packages/zowe-explorer/dist"
 
     steps:
       # check out source
@@ -23,7 +23,7 @@ jobs:
         run: yarn workspace vscode-extension-for-zowe run package
 
       # Verify vsix
-      - run: ls -la "${{ DIST }}/vscode-extension-for-zowe.vsix"
+      - run: ls -la "${{ env.DIST }}/vscode-extension-for-zowe.vsix"
 
       - name: Start Theia
         run: docker run --name theia --init -d -p 3000:3000 -v "${DIST}:/home/theia/.theia" theiaide/theia
