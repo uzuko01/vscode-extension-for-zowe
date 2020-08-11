@@ -13,10 +13,8 @@ jobs:
       DIST: "${{ env.PWD }}/packages/zowe-explorer/dist"
 
     steps:
-      # check out source
       - uses: actions/checkout@v2
 
-      # install dependencies
       - run: yarn install --frozen-lockfile
 
       - name: Build vsix
