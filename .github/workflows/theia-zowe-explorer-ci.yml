@@ -16,14 +16,11 @@ jobs:
       # install dependencies
       - run: yarn install --frozen-lockfile
 
-      - name: Create extension install directory
-        run: mkdir -p temp/plugins && chmod -R 777 temp
-
       - name: Build vsix
-        run: yarn vsce package -o temp/plugins/vscode-extension-for-zowe.vsix
+        run: yarn workspace vscode-extension-for-zowe run package
 
       # Verify vsix
-      - run: ls -la temp/plugins
+      - run: ls -la packaged-apps
 
       - name: Start Theia
         run: docker run --name theia --init -d -p 3000:3000 -v "${PWD}/temp:/home/theia/.theia" theiaide/theia
@@ -45,7 +42,7 @@ jobs:
         uses: actions/upload-artifact@v1
         with:
           name: vscode-extension-for-zowe.vsix
-          path: temp/plugins/vscode-extension-for-zowe.vsix
+          path: packaged-apps/vscode-extension-for-zowe.vsix
 
       - name: Verify plugin loaded
         run: docker exec -i theia ls -la .theia/plugins
