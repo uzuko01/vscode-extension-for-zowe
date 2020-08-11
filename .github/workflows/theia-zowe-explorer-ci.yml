@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      DIST: $GITHUB_ACTION_PATH/packages/zowe-explorer/dist
+      DIST: packages/zowe-explorer/dist
 
     steps:
       - uses: actions/checkout@v2
@@ -21,10 +21,10 @@ jobs:
         run: yarn workspace vscode-extension-for-zowe run package
 
       # Verify vsix
-      - run: ls -la "${{ env.DIST }}/vscode-extension-for-zowe.vsix"
+      - run: ls -la "${PWD}/${{ env.DIST }}/vscode-extension-for-zowe.vsix"
 
       - name: Start Theia
-        run: docker run --name theia --init -d -p 3000:3000 -v "${{ env.DIST }}:/home/theia/.theia" theiaide/theia
+        run: docker run --name theia --init -d -p 3000:3000 -v "$PWD/${{ env.DIST }}:/home/theia/.theia" theiaide/theia
       # NOTE(Kelosky): alternatively, we could run docker via something like this; however, we cannot hot reload 
       #                hosted VS Code extensions after theia is started (at least at the time this was written).
       # services:
