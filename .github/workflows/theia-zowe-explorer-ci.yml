@@ -54,7 +54,7 @@ jobs:
         run: curl --fail http://localhost:3000
 
       - name: Prep integration test files
-        run: yarn build:integration
+        run: yarn workspace vscode-extension-for-zowe run build:integration
 
-      - run: yarn test:theia
+      - run: yarn workspace vscode-extension-for-zowe test:theia
 
