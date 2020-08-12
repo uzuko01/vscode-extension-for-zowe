@@ -28,7 +28,6 @@
     "adm-zip": "0.4.16"
   },
   "scripts": {
-    "prepare": "yarn build",
     "lint": "yarn workspaces run lint",
     "lintErrors": "yarn workspaces run lintErrors",
     "pretty": "yarn workspaces run pretty",
