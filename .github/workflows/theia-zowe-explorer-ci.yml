@@ -17,6 +17,9 @@ jobs:
 
       - run: yarn install --frozen-lockfile
 
+      - name: Build javascript bundle
+        run: yarn workspace vscode-extension-for-zowe run build
+
       - name: Build vsix
         run: yarn workspace vscode-extension-for-zowe run package
 
