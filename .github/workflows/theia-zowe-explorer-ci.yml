@@ -59,8 +59,5 @@ jobs:
       - name: Show diagnostics
         run: cat dump.txt
 
-      - name: Prep integration test files
-        run: yarn workspace vscode-extension-for-zowe run build:integration
-
       - run: yarn workspace vscode-extension-for-zowe test:theia
 
