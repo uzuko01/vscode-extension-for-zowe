@@ -24,7 +24,7 @@ jobs:
         run: mkdir -p temp/plugins && chmod -R 777 temp
 
       - name: Copy vsix
-        run: cp dist/vscode-extension-for-zowe.vsix temp/plugins
+        run: cp "${PWD}/${{ env.DIST }}/vscode-extension-for-zowe.vsix" temp/plugins
 
       # Verify vsix
       - run: ls -la "${PWD}/${{ env.DIST }}"
