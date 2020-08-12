@@ -47,7 +47,10 @@ jobs:
         run: docker exec -i theia ls -la .theia/plugins
 
       - name: Verify Theia accessible
-        run: curl --fail http://localhost:3000 --max-time 10
+        run: curl --fail http://localhost:3000 --max-time 10 --trace-ascii dump.txt
+
+      - name: Show diagnostics
+        run: cat dump.txt
 
       - name: Prep integration test files
         run: yarn workspace vscode-extension-for-zowe run build:integration
