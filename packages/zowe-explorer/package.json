@@ -1175,7 +1175,7 @@
     "build": "webpack --mode production",
     "package": "vsce package --yarn -o dist/vscode-extension-for-zowe.vsix",
     "test:unit": "jest \".*__tests__.*\\.unit\\.test\\.ts\" --coverage",
-    "test:theia": "mocha ./out/__tests__/__theia__/*.theia.test.js --timeout 50000",
+    "test:theia": "mocha -r ts-node/register ./__tests__/__theia__/*.theia.test.ts --timeout 50000",
     "test": "yarn test:unit",
     "pretest:integration": "ts-node ./scripts/create-env.ts",
     "posttest:integration": "ts-node ./scripts/clean-env.ts",
