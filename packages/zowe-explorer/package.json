@@ -23,15 +23,10 @@
   "categories": [
     "Other"
   ],
-  "files": [
-    "out",
-    "README.md",
-    "resources"
-  ],
   "activationEvents": [
     "*"
   ],
-  "main": "./out/src/extension",
+  "main": "./dist/extension",
   "contributes": {
     "viewsContainers": {
       "activitybar": [
@@ -1176,26 +1171,24 @@
     }
   },
   "scripts": {
-    "vscode:prepublish": "gulp build && yarn license && yarn lint && webpack --mode production && yarn update",
-    "build": "gulp build && yarn license && webpack --mode development",
-    "build:integration": "gulp build && yarn license && tsc --build --pretty",
+    "clean": "echo clean",
+    "build": "webpack --mode production",
+    "package": "vsce package --yarn -o dist/vscode-extension-for-zowe.vsix",
     "test:unit": "jest \".*__tests__.*\\.unit\\.test\\.ts\" --coverage",
     "test:theia": "mocha ./out/__tests__/__theia__/*.theia.test.js --timeout 50000",
     "test": "yarn test:unit",
     "pretest:integration": "ts-node ./scripts/create-env.ts",
     "posttest:integration": "ts-node ./scripts/clean-env.ts",
-    "update": "node ../../scripts/stringUpdateScript.js",
-    "package": "vsce package --yarn -o dist/vscode-extension-for-zowe.vsix",
+    "update-strings": "node ../../scripts/stringUpdateScript.js",
     "license": "node ../../scripts/license.js",
-    "watch": "gulp build && webpack --mode development --watch --info-verbosity verbose",
-    "compile": "tsc -b",
-    "markdown": "markdownlint CHANGELOG.md README.md",
-    "lint": "yarn lint:src && yarn lint:tests  && yarn markdown",
+    "lint": "yarn lint:src && yarn lint:tests  && yarn lint:markdown",
     "lint:src": "tslint --format stylish --exclude [\"**/__tests__/**/*.ts\",\"node_modules/**/*\"] \"src/**/*.ts\"",
     "lint:tests": "tslint --format stylish \"**/__tests__/**/*.ts\" --exclude \"node_modules/**/*\" && eslint \"__tests__/**\"",
-    "clean": "gulp clean",
+    "lint:markdown": "markdownlint CHANGELOG.md README.md",
     "lintErrors": "echo \"zowe-explorer: lintErrors coming soon with eslint.\"",
-    "pretty": "echo \"zowe-explorer: pretty coming soon with eslint.\""
+    "pretty": "echo \"zowe-explorer: pretty coming soon with eslint.\"",
+    "vscode:prepublish": "yarn build",
+    "watch": "webpack --mode development --watch --info-verbosity verbose"
   },
   "engines": {
     "vscode": "^1.43.0"

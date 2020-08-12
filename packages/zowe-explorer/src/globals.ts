@@ -49,7 +49,7 @@ export const ACTIVE_CONTEXT = CONTEXT_PREFIX + "Active";
 export const ICON_STATE_OPEN = "open";
 export const ICON_STATE_CLOSED = "closed";
 export const THEIA = "Eclipse Theia";
-export const ROOTPATH = path.join(__dirname, "..", "..");
+export const ROOTPATH = path.join(__dirname, "..");
 
 /**
  * The types of persistence schemas wich are available in settings.json
@@ -72,7 +72,7 @@ export function defineGlobals(tempPath: string | undefined) {
     // Set temp path & folder paths
     tempPath !== "" && tempPath !== undefined ?
         ZOWETEMPFOLDER = path.join(tempPath, "temp") :
-        ZOWETEMPFOLDER = path.join(__dirname, "..", "..", "resources", "temp");
+        ZOWETEMPFOLDER = path.join(ROOTPATH, "resources", "temp");
 
     ZOWE_TMP_FOLDER = path.join(ZOWETEMPFOLDER, "tmp");
     USS_DIR = path.join(ZOWETEMPFOLDER, "_U_");

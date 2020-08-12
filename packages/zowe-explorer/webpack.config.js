@@ -14,15 +14,19 @@
 'use strict';
 
 const path = require('path');
-var webpack = require("webpack");
-var fs = require("fs");
+const fs = require("fs");
+
+const webpack = require("webpack");
+const { NLSBundlePlugin } = require('vscode-nls-dev/lib/webpack-bundler');
+
+const id = 'ZOWE.vscode-extension-for-zowe';
 
 /**@type {import('webpack').Configuration}*/
 const config = {
     target: 'node', // vscode extensions run in a Node.js-context 📖 -> https://webpack.js.org/configuration/node/
     entry: './src/extension.ts', // the entry point of this extension, 📖 -> https://webpack.js.org/configuration/entry-context/
     output: { // the bundle is stored in the 'out/src' folder (check package.json), 📖 -> https://webpack.js.org/configuration/output/
-        path: path.resolve(__dirname, 'out/src'),
+        path: path.resolve(__dirname, 'dist'),
         filename: 'extension.js',
         libraryTarget: "commonjs2",
         devtoolModuleFilenameTemplate: "../../[resource-path]",
@@ -32,9 +36,6 @@ const config = {
         // Add modules that cannot be webpack'ed, 📖 -> https://webpack.js.org/configuration/externals/
         vscode: "commonjs vscode", // the vscode-module is created on-the-fly and must be excluded. Add other modules that cannot be webpack'ed, 📖 -> https://webpack.js.org/configuration/externals/
         keytar: "commonjs keytar",
-        "spdx-exceptions": "commonjs spdx-exceptions",
-        "spdx-license-ids": "commonjs spdx-license-ids",
-        "spdx-license-ids/deprecated": "commonjs spdx-license-ids/deprecated"
     },
     resolve: { // support reading TypeScript and JavaScript files, 📖 -> https://github.com/TypeStrong/ts-loader
         extensions: ['.ts', '.js']
@@ -53,7 +54,7 @@ const config = {
             use: [{
                 loader: 'vscode-nls-dev/lib/webpack-loader',
                 options: {
-                    base: __dirname
+                  base: path.join(__dirname, 'src')
                 }
             }, {
                 loader: 'ts-loader',
@@ -66,7 +67,8 @@ const config = {
         }]
     },
     plugins: [
-        new webpack.BannerPlugin(fs.readFileSync('../../.vscode/banner.txt', 'utf8'))
+        new webpack.BannerPlugin(fs.readFileSync('../../.vscode/banner.txt', 'utf8')),
+        new NLSBundlePlugin(id)
     ]
 }
 
