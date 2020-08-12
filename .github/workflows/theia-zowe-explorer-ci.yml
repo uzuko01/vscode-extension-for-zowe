@@ -17,17 +17,21 @@ jobs:
 
       - run: yarn install --frozen-lockfile
 
-      - name: Build javascript bundle
-        run: yarn workspace vscode-extension-for-zowe run build
-
       - name: Build vsix
         run: yarn workspace vscode-extension-for-zowe run package
 
+      - name: Create extension install directory
+        run: mkdir -p temp/plugins && chmod -R 777 temp
+
+      - name: Copy vsix
+        run: cp dist/vscode-extension-for-zowe.vsix temp/plugins
+
       # Verify vsix
-      - run: ls -la "${PWD}/${{ env.DIST }}/vscode-extension-for-zowe.vsix"
+      - run: ls -la "${PWD}/${{ env.DIST }}"
+      - run: ls -la "${PWD}/temp/plugins"
 
       - name: Start Theia
-        run: docker run --name theia --init -d -p 3000:3000 -v "${PWD}/${{ env.DIST }}:/home/theia/.theia/plugins" theiaide/theia
+        run: docker run --name theia --init -d -p 3000:3000 -v "${PWD}/temp/plugins:/home/theia/.theia/plugins" theiaide/theia
       # NOTE(Kelosky): alternatively, we could run docker via something like this; however, we cannot hot reload 
       #                hosted VS Code extensions after theia is started (at least at the time this was written).
       # services:
