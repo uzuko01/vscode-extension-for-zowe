@@ -34,6 +34,7 @@ import { ZoweExplorerApiRegister } from "./api/ZoweExplorerApiRegister";
 import { ZoweExplorerExtender } from "./ZoweExplorerExtender";
 import { KeytarCredentialManager } from "./KeytarCredentialManager";
 import { linkProfileDialog } from "./utils/profileLink";
+import { ssoLoginDialog, ssoLogoutDialog } from "./utils/ssoLogin";
 import * as nls from "vscode-nls";
 declare const __webpack_require__: typeof require;
 declare const __non_webpack_require__: typeof require;
@@ -192,6 +193,8 @@ function initDatasetProvider(context: vscode.ExtensionContext, datasetProvider: 
     vscode.commands.registerCommand("zowe.ZoweNode.openPS", (node) => dsActions.openPS(node, true, datasetProvider));
     vscode.commands.registerCommand("zowe.createDataset", (node) => dsActions.createFile(node, datasetProvider));
     vscode.commands.registerCommand("zowe.all.profilelink", (node) => linkProfileDialog(node.getProfile()));
+    vscode.commands.registerCommand("zowe.all.ssoLogin", (node) => ssoLoginDialog());
+    vscode.commands.registerCommand("zowe.all.ssoLogout", (node) => ssoLogoutDialog());
     vscode.commands.registerCommand("zowe.createMember", (node) => dsActions.createMember(node, datasetProvider));
     vscode.commands.registerCommand("zowe.deleteDataset", (node) => dsActions.deleteDataset(node, datasetProvider));
     vscode.commands.registerCommand("zowe.deletePDS", (node) => dsActions.deleteDataset(node, datasetProvider));

@@ -284,6 +284,14 @@
         "title": "%deleteProfile%"
       },
       {
+        "command": "zowe.all.ssoLogin",
+        "title": "%ssoLogin%"
+      },
+      {
+        "command": "zowe.all.ssoLogout",
+        "title": "%ssoLogout%"
+      },
+      {
         "command": "zowe.uss.createDirectory",
         "title": "%uss.createDirectory%",
         "icon": {
@@ -646,6 +654,16 @@
           "group": "6_modification@5"
         },
         {
+          "when": "view == zowe.uss.explorer && viewItem =~ /^(?!.*_fav.*)ussSession.*/",
+          "command": "zowe.all.ssoLogin",
+          "group": "6_modification@6"
+        },
+        {
+          "when": "view == zowe.uss.explorer && viewItem =~ /^(?!.*_fav.*)ussSession.*/",
+          "command": "zowe.all.ssoLogout",
+          "group": "6_modification@7"
+        },
+        {
           "when": "view == zowe.explorer && viewItem =~ /^(member.*|ds.*)/",
           "command": "zowe.editMember",
           "group": "inline"
@@ -806,6 +824,16 @@
           "group": "7_modification@5"
         },
         {
+          "when": "view == zowe.explorer && viewItem =~ /^(?!.*_fav.*)session.*/",
+          "command": "zowe.all.ssoLogin",
+          "group": "7_modification@6"
+        },
+        {
+          "when": "view == zowe.explorer && viewItem =~ /^(?!.*_fav.*)session.*/",
+          "command": "zowe.all.ssoLogout",
+          "group": "7_modification@7"
+        },
+        {
           "when": "view == zowe.jobs && viewItem =~ /^(?!.*_fav.*)server.*/",
           "command": "zowe.refreshJobsServer",
           "group": "inline"
@@ -897,6 +925,16 @@
           "when": "view == zowe.jobs && viewItem =~ /^(?!.*_fav.*)server.*/",
           "command": "zowe.jobs.deleteProfile",
           "group": "3_modification@2"
+        },
+        {
+          "when": "view == zowe.jobs && viewItem =~ /^(?!.*_fav.*)server.*/",
+          "command": "zowe.all.ssoLogin",
+          "group": "3_modification@3"
+        },
+        {
+          "when": "view == zowe.jobs && viewItem =~ /^(?!.*_fav.*)server.*/",
+          "command": "zowe.all.ssoLogout",
+          "group": "3_modification@4"
         }
       ],
       "commandPalette": [
@@ -922,6 +960,14 @@
         },
         {
           "command": "zowe.all.profilelink",
+          "when": "never"
+        },
+        {
+          "command": "zowe.all.ssoLogin",
+          "when": "never"
+        },
+        {
+          "command": "zowe.all.ssoLogout",
           "when": "never"
         },
         {
@@ -1255,7 +1301,7 @@
     "webpack-cli": "^3.3.11"
   },
   "dependencies": {
-    "@zowe/cli": "6.15.0",
+    "@zowe/cli": "^6.21.1",
     "fs-extra": "8.0.1",
     "isbinaryfile": "4.0.4",
     "js-yaml": "3.13.1",

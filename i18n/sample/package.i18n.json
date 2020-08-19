@@ -70,6 +70,8 @@
     "Zowe-Environment": "Environment where the extension is running, default is VSCode",
     "issueMvsCmd": "Zowe: Issue MVS Command...",
     "deleteProfile": "Delete Profile",
+    "ssoLogin": "Log in to API ML",
+    "ssoLogout": "Log out from API ML",
     "cmd.deleteProfile": "Zowe: Delete a Profile Permanently...",
     "rename": "Rename",
     "copy": "Copy",

@@ -107,6 +107,8 @@ async function createGlobalMocks() {
             "zowe.ZoweNode.openPS",
             "zowe.createDataset",
             "zowe.all.profilelink",
+            "zowe.all.ssoLogin",
+            "zowe.all.ssoLogout",
             "zowe.createMember",
             "zowe.deleteDataset",
             "zowe.deletePDS",
