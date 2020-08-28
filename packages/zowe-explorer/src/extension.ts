@@ -10,6 +10,7 @@
 */
 
 // tslint:disable-next-line: no-duplicate-imports
+import "./setupLocalization";
 import * as zowe from "@zowe/cli";
 import * as fs from "fs";
 import * as path from "path";

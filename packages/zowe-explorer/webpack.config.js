@@ -21,16 +21,32 @@ const webpack = require("webpack");
 const { NLSBundlePlugin } = require('vscode-nls-dev/lib/webpack-bundler');
 
 const id = 'ZOWE.vscode-extension-for-zowe';
+const distFolderPath = path.resolve(__dirname, 'dist');
 
 /**@type {import('webpack').Configuration}*/
 const config = {
+    optimization: {
+      minimize: false
+    },
     target: 'node', // vscode extensions run in a Node.js-context 📖 -> https://webpack.js.org/configuration/node/
     entry: './src/extension.ts', // the entry point of this extension, 📖 -> https://webpack.js.org/configuration/entry-context/
     output: { // the bundle is stored in the 'out/src' folder (check package.json), 📖 -> https://webpack.js.org/configuration/output/
-        path: path.resolve(__dirname, 'dist'),
-        filename: 'extension.js',
+        path: distFolderPath,
+        filename: 'extension.bundle.js',
         libraryTarget: "commonjs2",
-        devtoolModuleFilenameTemplate: "../../[resource-path]",
+        devtoolModuleFilenameTemplate: info => {
+          const source = info.absoluteResourcePath;
+          if (source.startsWith('/')) {
+            return path.relative(distFolderPath, source);
+          }
+          if (source.startsWith('webpack/')) {
+            return 'webpack: ' + source.slice(8);
+          }
+          if (source.startsWith('external ')) {
+            return 'external: ' + source.slice(9);
+          }
+          return source;
+        }
     },
     devtool: 'source-map',
     externals: {
@@ -53,17 +69,12 @@ const config = {
             test: /\.ts$/,
             exclude: /node_modules/,
             use: [{
-                loader: 'vscode-nls-dev/lib/webpack-loader',
-                options: {
+              loader: 'vscode-nls-dev/lib/webpack-loader',
+              options: {
                   base: path.join(__dirname, 'src')
-                }
+              }
             }, {
-                loader: 'ts-loader',
-                options: {
-                    compilerOptions: {
-                        "sourceMap": true,
-                    }
-                }
+              loader: 'ts-loader',
             }]
         }]
     },

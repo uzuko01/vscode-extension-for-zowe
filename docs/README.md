@@ -170,8 +170,7 @@ All localized strings must be string literals, you cannot include variables or u
         - You will also need to include the following code:
 
             ```Typescript
-            // Set up localization
-            nls.config({ messageFormat: nls.MessageFormat.bundle, bundleFormat: nls.BundleFormat.standalone })();
+            nls.config({ messageFormat: nls.MessageFormat.bundle, bundleFormat: nls.BundleFormat.standalone });
             const localize: nls.LocalizeFunc = nls.loadMessageBundle();
             ```
 

@@ -21,8 +21,6 @@ import { IZoweTreeNode, IZoweDatasetTreeNode, IZoweNodeType } from "../api/IZowe
 import { IZoweTree } from "../api/IZoweTree";
 import * as nls from "vscode-nls";
 
-// Set up localization
-nls.config({ messageFormat: nls.MessageFormat.bundle, bundleFormat: nls.BundleFormat.standalone })();
 const localize: nls.LocalizeFunc = nls.loadMessageBundle();
 
 // tslint:disable-next-line: max-classes-per-file

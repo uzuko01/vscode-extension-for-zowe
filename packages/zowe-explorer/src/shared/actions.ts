@@ -21,8 +21,6 @@ import * as contextually from "../shared/context";
 import * as nls from "vscode-nls";
 import { getIconByNode, getIconById, IconId } from "../generators/icons";
 
-// Set up localization
-nls.config({ messageFormat: nls.MessageFormat.bundle, bundleFormat: nls.BundleFormat.standalone })();
 const localize: nls.LocalizeFunc = nls.loadMessageBundle();
 
 /**

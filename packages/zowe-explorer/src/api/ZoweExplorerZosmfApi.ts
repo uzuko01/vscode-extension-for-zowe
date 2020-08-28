@@ -14,8 +14,6 @@ import { Session, IProfileLoaded, ITaskWithStatus, TaskStage } from "@zowe/imper
 import { ZoweExplorerApi } from "./ZoweExplorerApi";
 
 import * as nls from "vscode-nls";
-// Set up localization
-nls.config({ messageFormat: nls.MessageFormat.bundle, bundleFormat: nls.BundleFormat.standalone })();
 const localize: nls.LocalizeFunc = nls.loadMessageBundle();
 
 // tslint:disable: max-classes-per-file

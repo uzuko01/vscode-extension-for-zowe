@@ -19,8 +19,6 @@ import { FilterDescriptor, FilterItem, resolveQuickPickHelper, errorHandling } f
 import { IZoweTreeNode } from "../api/IZoweTreeNode";
 import * as nls from "vscode-nls";
 
-// Set up localization
-nls.config({ messageFormat: nls.MessageFormat.bundle, bundleFormat: nls.BundleFormat.standalone })();
 const localize: nls.LocalizeFunc = nls.loadMessageBundle();
 
 /**

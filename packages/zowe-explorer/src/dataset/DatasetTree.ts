@@ -27,8 +27,6 @@ import * as contextually from "../shared/context";
 import { closeOpenedTextFile } from "../utils/workspace";
 import * as nls from "vscode-nls";
 
-// Set up localization
-nls.config({ messageFormat: nls.MessageFormat.bundle, bundleFormat: nls.BundleFormat.standalone })();
 const localize: nls.LocalizeFunc = nls.loadMessageBundle();
 
 /**
@@ -196,7 +194,7 @@ export class DatasetTree extends ZoweTreeProvider implements IZoweTree<IZoweData
                 const session = ZoweExplorerApiRegister.getMvsApi(profile).getSession();
                 const node = new ZoweDatasetNode(line.substring(0, line.lastIndexOf("{")),
                     vscode.TreeItemCollapsibleState.None, this.mFavoriteSession, session, undefined, undefined, profile);
-                node.command = {command: "zowe.pattern", title: "", arguments: [node]};
+                node.command = { command: "zowe.pattern", title: "", arguments: [node] };
                 node.contextValue = globals.DS_SESSION_CONTEXT + globals.FAV_SUFFIX;
                 const icon = getIconByNode(node);
                 if (icon) {
