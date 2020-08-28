@@ -76,6 +76,7 @@
     "paste" : "Paste",
     "hMigrateDataSet" : "Migrate Data Set",
     "hRecallDataSet" : "Recall Data Set",
+    "hDeleteDataSet" : "Delete Data Set",
     "profile.configuration.title": "Zowe z/OSMF Profiles",
     "profile.configuration.name": "Profile Name",
     "profile.configuration.url": "z/OSMF URL",

@@ -126,6 +126,7 @@ async function createGlobalMocks() {
             "zowe.renameDataSetMember",
             "zowe.hMigrateDataSet",
             "zowe.hRecallDataSet",
+            "zowe.hDeleteDataSet",
             "zowe.uss.addFavorite",
             "zowe.uss.removeFavorite",
             "zowe.uss.addSession",

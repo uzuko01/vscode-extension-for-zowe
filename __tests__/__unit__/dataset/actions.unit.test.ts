@@ -1589,6 +1589,58 @@ describe("Dataset Actions Unit Tests - Function hRecallDataSet", () => {
     });
 });
 
+describe("Dataset Actions Unit Tests - Function hDeleteDataSet", () => {
+    function createBlockMocks() {
+        const session = createISession();
+        const sessionWithoutCredentials = createISessionWithoutCredentials();
+        const imperativeProfile = createIProfile();
+        const profileInstance = createInstanceOfProfile(imperativeProfile);
+        const zosmfSession = createBasicZosmfSession(imperativeProfile);
+        const treeView = createTreeView();
+        const datasetSessionNode = createDatasetSessionNode(session, imperativeProfile);
+        const testDatasetTree = createDatasetTree(datasetSessionNode, treeView);
+        const mvsApi = createMvsApi(imperativeProfile);
+        bindMvsApi(mvsApi);
+
+        return {
+            session,
+            sessionWithoutCredentials,
+            zosmfSession,
+            treeView,
+            imperativeProfile,
+            datasetSessionNode,
+            mvsApi,
+            profileInstance,
+            testDatasetTree
+        };
+    }
+
+    afterAll(() => jest.restoreAllMocks());
+
+    it("Checking PS migrated dataset deletion", async () => {
+        globals.defineGlobals("");
+        createGlobalMocks();
+        const blockMocks = createBlockMocks();
+        mocked(Profiles.getInstance).mockReturnValue(blockMocks.profileInstance);
+        const node = new ZoweDatasetNode("HLQ.TEST.TO.NODE", vscode.TreeItemCollapsibleState.None, blockMocks.datasetSessionNode, null);
+        node.contextValue = globals.DS_DS_CONTEXT;
+
+        const hdeleteSpy = jest.spyOn(blockMocks.mvsApi, "hDeleteDataSet");
+        hdeleteSpy.mockResolvedValueOnce({
+            success: true,
+            commandResponse: "",
+            apiResponse: {
+                items: []
+            }
+        });
+
+        await dsActions.hDeleteDataSet(node);
+
+        expect(hdeleteSpy).toHaveBeenCalledWith("HLQ.TEST.TO.NODE");
+        expect(mocked(vscode.window.showInformationMessage)).toHaveBeenCalled();
+    });
+});
+
 describe("Dataset Actions Unit Tests - Function createFile", () => {
     function createBlockMocks() {
         const session = createISession();

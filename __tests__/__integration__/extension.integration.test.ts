@@ -752,6 +752,82 @@ describe("Extension Integration Tests", () => {
         });
     });
 
+    describe("Deleting a migrated data set", () => {
+        describe("Success Scenarios", () => {
+            describe("Delete a migrated sequential data set", () => {
+                const dataSetName = `${pattern}.SDATA.DEL`;
+
+                beforeEach(async () => {
+                    await zowe.Delete.dataSet(sessionNode.getSession(), dataSetName).catch((err) => err);
+                    await zowe.Create.dataSet(sessionNode.getSession(), zowe.CreateDataSetTypeEnum.DATA_SET_SEQUENTIAL, dataSetName);
+                });
+
+                afterEach(async () => {
+                    await zowe.Delete.dataSet(sessionNode.getSession(), dataSetName).catch((err) => err);
+                });
+
+                it("Should send a hDelete request", async () => {
+                    let error;
+
+                    try {
+                        const node = new ZoweDatasetNode(dataSetName, vscode.TreeItemCollapsibleState.None, sessionNode, session);
+                        node.contextValue = DS_DS_CONTEXT;
+
+                        await dsActions.hDeleteDataSet(node);
+                    } catch (err) {
+                        error = err;
+                    }
+                    expect(error).to.be.equal(undefined);
+                }).timeout(TIMEOUT);
+            });
+            describe("Delete a migrated partitioned data set", () => {
+                const dataSetName = `${pattern}.PDATA.DEL`;
+
+                beforeEach(async () => {
+                    await zowe.Delete.dataSet(sessionNode.getSession(), dataSetName).catch((err) => err);
+                    await zowe.Create.dataSet(sessionNode.getSession(), zowe.CreateDataSetTypeEnum.DATA_SET_PARTITIONED, dataSetName);
+                });
+
+                afterEach(async () => {
+                    await zowe.Delete.dataSet(sessionNode.getSession(), dataSetName).catch((err) => err);
+                });
+
+                it("Should send a hDelete request", async () => {
+                    let error;
+
+                    try {
+                        const node = new ZoweDatasetNode(dataSetName, vscode.TreeItemCollapsibleState.None, sessionNode, session);
+                        node.contextValue = DS_DS_CONTEXT;
+
+                        await dsActions.hDeleteDataSet(node);
+                    } catch (err) {
+                        error = err;
+                    }
+                    expect(error).to.be.equal(undefined);
+                }).timeout(TIMEOUT);
+            });
+        });
+        describe("Failure Scenarios", () => {
+            describe("Delete a migrated sequential data set", () => {
+                const dataSetName = `${pattern}.TEST.FAIL`;
+
+                it("Should fail if data set doesn't exist", async () => {
+                    let error;
+
+                    try {
+                        const node = new ZoweDatasetNode(dataSetName, vscode.TreeItemCollapsibleState.None, sessionNode, session);
+                        node.contextValue = DS_DS_CONTEXT;
+
+                        await dsActions.hDeleteDataSet(node);
+                    } catch (err) {
+                        error = err;
+                    }
+                    expect(error).to.not.equal(undefined);
+                }).timeout(TIMEOUT);
+            });
+        });
+    });
+
     describe("Updating Temp Folder", () => {
         // define paths
         const testingPath = path.join(__dirname, "..", "..", "..", "test");

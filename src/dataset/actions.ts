@@ -701,7 +701,7 @@ export async function copyDataSet(node: IZoweNodeType) {
  * Migrate data sets
  *
  * @export
- * @param {IZoweDatasetTreeNode} node - The node to paste to
+ * @param {IZoweDatasetTreeNode} node - The node to migrate
  */
 export async function hMigrateDataSet(node: ZoweDatasetNode) {
     await Profiles.getInstance().checkCurrentProfile(node.getProfile());
@@ -720,7 +720,7 @@ export async function hMigrateDataSet(node: ZoweDatasetNode) {
  * Recall data sets
  *
  * @export
- * @param {IZoweDatasetTreeNode} node - The node to paste to
+ * @param {IZoweDatasetTreeNode} node - The node to recall
  */
 export async function hRecallDataSet(node: ZoweDatasetNode) {
     await Profiles.getInstance().checkCurrentProfile(node.getProfile());
@@ -728,6 +728,25 @@ export async function hRecallDataSet(node: ZoweDatasetNode) {
         const { dataSetName } = dsUtils.getNodeLabels(node);
         vscode.window.showInformationMessage(localize("hRecall.requestSent1", "Recall of dataset: ") + dataSetName +
         localize("hRecall.requestSent2", " requested."));
+        return ZoweExplorerApiRegister.getMvsApi(node.getProfile()).hRecallDataSet(dataSetName);
+    } else {
+        vscode.window.showErrorMessage(localize("hMigrateDataSet.checkProfile", "Profile is invalid"));
+        return;
+    }
+}
+
+/**
+ * Delete migrated data sets
+ *
+ * @export
+ * @param {IZoweDatasetTreeNode} node - The migrated node to delete
+ */
+export async function hDeleteDataSet(node: ZoweDatasetNode) {
+    await Profiles.getInstance().checkCurrentProfile(node.getProfile());
+    if (Profiles.getInstance().validProfile === ValidProfileEnum.VALID) {
+        const { dataSetName } = dsUtils.getNodeLabels(node);
+        vscode.window.showInformationMessage(localize("hDelete.requestSent1", "Deletion of dataset: ") + dataSetName +
+        localize("hDelete.requestSent2", " requested."));
         return ZoweExplorerApiRegister.getMvsApi(node.getProfile()).hRecallDataSet(dataSetName);
     } else {
         vscode.window.showErrorMessage(localize("hMigrateDataSet.checkProfile", "Profile is invalid"));

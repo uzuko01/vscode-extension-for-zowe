@@ -212,6 +212,11 @@ export class ZosmfMvsApi extends ZosmfApiCommon implements ZoweExplorerApi.IMvs 
         return zowe.HRecall.dataSet(this.getSession(), dataSetName);
     }
 
+    public async hDeleteDataSet(dataSetName: string,
+    ): Promise<zowe.IZosFilesResponse> {
+        return zowe.HDelete.dataSet(this.getSession(), dataSetName);
+    }
+
     public async deleteDataSet(dataSetName: string, options?: zowe.IDeleteDatasetOptions
         ): Promise<zowe.IZosFilesResponse> {
             return zowe.Delete.dataSet(this.getSession(), dataSetName);

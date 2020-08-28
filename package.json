@@ -164,6 +164,10 @@
         "title": "%hRecallDataSet%"
       },
       {
+        "command": "zowe.hDeleteDataSet",
+        "title": "%hDeleteDataSet%"
+      },
+      {
         "command": "zowe.pasteDataSet",
         "title": "%paste%"
       },
@@ -719,6 +723,11 @@
           "when": "view == zowe.explorer && viewItem =~ /^migr.*/",
           "command": "zowe.hRecallDataSet",
           "group": "4_hsmCommands@0"
+        },
+        {
+          "when": "view == zowe.explorer && viewItem =~ /^migr.*/",
+          "command": "zowe.hDeleteDataSet",
+          "group": "4_hsmCommands@1"
         },
         {
           "when": "view == zowe.explorer && viewItem =~ /^(ds.*|^pds.*)/",
