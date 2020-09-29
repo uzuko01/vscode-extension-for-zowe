@@ -56,7 +56,7 @@ class MockUssApi1 implements ZoweExplorerApi.IUss {
     public rename(currentUssPath: string, newUssPath: string): Promise<zowe.IZosFilesResponse> {
         throw new Error("Method not implemented.");
     }
-    public getSession(profile?: IProfileLoaded): Promise<Session> {
+    public getSession(profile?: IProfileLoaded): Session {
         throw new Error("Method not implemented.");
     }
     public getStatus?(profile?: IProfileLoaded): Promise<string> {
@@ -99,7 +99,7 @@ class MockUssApi2 implements ZoweExplorerApi.IUss {
     public rename(currentUssPath: string, newUssPath: string): Promise<zowe.IZosFilesResponse> {
         throw new Error("Method not implemented.");
     }
-    public getSession(profile?: IProfileLoaded): Promise<Session> {
+    public getSession(profile?: IProfileLoaded): Session {
         throw new Error("Method not implemented.");
     }
     public getStatus?(profile?: IProfileLoaded): Promise<string> {

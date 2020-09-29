@@ -10,7 +10,7 @@
 */
 
 import * as zowe from "@zowe/cli";
-import { IProfile, IProfileLoaded, Session } from "@zowe/imperative";
+import { IProfileLoaded, Session } from "@zowe/imperative";
 import { TreeItem } from "vscode";
 
 /**
@@ -42,7 +42,7 @@ export namespace ZoweExplorerApi {
          *      will use the profile the API was retrieved with by default
          * @returns {Session} a Zowe CLI Session
          */
-        getSession(profile?: IProfileLoaded, baseProfile?: IProfile): Promise<Session>;
+        getSession(profile?: IProfileLoaded): Session;
 
         /**
          * Create a session for the specific profile type.
@@ -51,23 +51,7 @@ export namespace ZoweExplorerApi {
          *      will use the profile the API was retrieved with by default
          * @returns {IZosmfInfoResponse} z/OSMF Check Status response
          */
-        getStatus?(profile: IProfileLoaded, profileType?, prompt?: boolean): Promise<string>;
-
-        /**
-         * Get a valid session which can be used to connect to z/OS
-         *
-         * @param {IProfileLoaded} serviceProfile
-         *      a service-specific profile from which to pull connection info
-         * @param {string} profileName
-         *      the name of the profile for which a session is needed
-         * @param {IProfile} baseProfile
-         *      the APIML base profile from which to pull connection info
-         * @param {IProfile} prompt
-         *      if service & base profile contain insufficient connection info,
-         *      should the user be prompted in the GUI?
-         * @returns {IZosmfInfoResponse} z/OSMF Check Status response
-         */
-        getValidSession?(serviceProfile: IProfileLoaded, profileName: string, prompt?: boolean): Promise<Session>;
+        getStatus?(profile: IProfileLoaded, profileType?): Promise<string>;
     }
 
     /**

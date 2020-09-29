@@ -10,11 +10,10 @@
 */
 
 import * as zowe from "@zowe/cli";
-import { Session, IProfileLoaded, ITaskWithStatus } from "@zowe/imperative";
+import { Session, IProfileLoaded, ITaskWithStatus, TaskStage } from "@zowe/imperative";
 import { ZoweExplorerApi } from "./ZoweExplorerApi";
-import * as nls from "vscode-nls";
-import { getValidSession } from "../profiles/utils";
 
+import * as nls from "vscode-nls";
 // Set up localization
 nls.config({ messageFormat: nls.MessageFormat.bundle, bundleFormat: nls.BundleFormat.standalone })();
 const localize: nls.LocalizeFunc = nls.loadMessageBundle();
@@ -37,39 +36,23 @@ class ZosmfApiCommon implements ZoweExplorerApi.ICommon {
         return ZosmfUssApi.getProfileTypeName();
     }
 
-    public async getSession(profile?: IProfileLoaded): Promise<Session> {
+    public getSession(profile?: IProfileLoaded): Session {
         if (!this.session) {
-            this.session = await getValidSession((profile||this.profile), (profile||this.profile).name, false);
+            this.session = zowe.ZosmfSession.createBasicZosmfSession((profile||this.profile).profile);
         }
         return this.session;
     }
 
-    public async getStatus(validateProfile?: IProfileLoaded, profileType?: string, prompt?: boolean): Promise<string> {
+    public async getStatus(validateProfile?: IProfileLoaded, profileType?: string): Promise<string> {
         // This API call is specific for z/OSMF profiles
         if (profileType === "zosmf") {
-            try {
-                const validateSession = await getValidSession(validateProfile, validateProfile.name, prompt);
-                let sessionStatus;
-                if (validateSession) { sessionStatus = await zowe.CheckStatus.getZosmfInfo(validateSession); }
+            const validateSession = await zowe.ZosmfSession.createBasicZosmfSession(validateProfile.profile);
+            const sessionStatus= await zowe.CheckStatus.getZosmfInfo(validateSession);
 
-                if (sessionStatus) {
-                    // Store the valid connection details in the profile
-                    Object.keys(validateProfile.profile).forEach((profileKey) => {
-                        Object.keys(validateSession.ISession).forEach((sessionKey) => {
-                            if (profileKey === sessionKey && !validateProfile.profile[profileKey]) {
-                                validateProfile.profile[profileKey] = validateSession.ISession[sessionKey];
-                            }
-                            if (profileKey === "host" && sessionKey === "hostname" && !validateProfile.profile[profileKey]) {
-                                validateProfile.profile[profileKey] = validateSession.ISession[sessionKey];
-                            }
-                        });
-                    });
-                    return "active";
-                } else {
-                    return "inactive";
-                }
-            } catch (err) {
-                throw new Error(err);
+            if (sessionStatus) {
+                return "active";
+            } else {
+                return "inactive";
             }
         } else {
             return "unverified";
@@ -83,16 +66,16 @@ class ZosmfApiCommon implements ZoweExplorerApi.ICommon {
 export class ZosmfUssApi extends ZosmfApiCommon implements ZoweExplorerApi.IUss {
 
     public async fileList(ussFilePath: string): Promise<zowe.IZosFilesResponse> {
-        return zowe.List.fileList(await this.getSession(), ussFilePath);
+        return zowe.List.fileList(this.getSession(), ussFilePath);
     }
 
     public async isFileTagBinOrAscii(ussFilePath: string): Promise<boolean> {
-        return zowe.Utilities.isFileTagBinOrAscii(await this.getSession(), ussFilePath);
+        return zowe.Utilities.isFileTagBinOrAscii(this.getSession(), ussFilePath);
     }
 
     public async getContents(inputFilePath: string, options: zowe.IDownloadOptions
     ): Promise<zowe.IZosFilesResponse> {
-        return zowe.Download.ussFile(await this.getSession(), inputFilePath, options);
+        return zowe.Download.ussFile(this.getSession(), inputFilePath, options);
     }
 
 
@@ -120,7 +103,7 @@ export class ZosmfUssApi extends ZosmfApiCommon implements ZoweExplorerApi.IUss 
         };
 
         options.task = task;
-        return zowe.Upload.fileToUssFile(await this.getSession(), inputFilePath, ussFilePath, options);
+        return zowe.Upload.fileToUssFile(this.getSession(), inputFilePath, ussFilePath, options);
     }
 
     public async uploadDirectory(
@@ -128,22 +111,22 @@ export class ZosmfUssApi extends ZosmfApiCommon implements ZoweExplorerApi.IUss 
         ussDirectoryPath: string,
         options?: zowe.IUploadOptions
     ): Promise<zowe.IZosFilesResponse> {
-        return zowe.Upload.dirToUSSDirRecursive(await this.getSession(), inputDirectoryPath, ussDirectoryPath, options
+        return zowe.Upload.dirToUSSDirRecursive(this.getSession(), inputDirectoryPath, ussDirectoryPath, options
         );
     }
 
     public async create(ussPath: string, type: string, mode?: string): Promise<zowe.IZosFilesResponse> {
-        return zowe.Create.uss(await this.getSession(), ussPath, type);
+        return zowe.Create.uss(this.getSession(), ussPath, type);
     }
 
     public async delete(ussPath: string, recursive?: boolean): Promise<zowe.IZosFilesResponse> {
         // handle zosmf api issue with file paths
         const fixedName = ussPath.startsWith("/") ?  ussPath.substring(1) :  ussPath;
-        return zowe.Delete.ussFile(await this.getSession(), fixedName, recursive);
+        return zowe.Delete.ussFile(this.getSession(), fixedName, recursive);
     }
 
     public async rename(currentUssPath: string, newUssPath: string): Promise<zowe.IZosFilesResponse> {
-        const result = await zowe.Utilities.renameUSSFile(await this.getSession(), currentUssPath, newUssPath);
+        const result = await zowe.Utilities.renameUSSFile(this.getSession(), currentUssPath, newUssPath);
         return {
             success: true,
             commandResponse: null,
@@ -159,36 +142,36 @@ export class ZosmfMvsApi extends ZosmfApiCommon implements ZoweExplorerApi.IMvs 
 
     public async dataSet(filter: string, options?: zowe.IListOptions
         ): Promise<zowe.IZosFilesResponse>{
-        return zowe.List.dataSet(await this.getSession(), filter, options);
+        return zowe.List.dataSet(this.getSession(), filter, options);
     }
 
     public async allMembers(dataSetName: string, options?: zowe.IListOptions
         ): Promise<zowe.IZosFilesResponse> {
-        return zowe.List.allMembers(await this.getSession(), dataSetName, options);
+        return zowe.List.allMembers(this.getSession(), dataSetName, options);
     }
 
     public async getContents(dataSetName: string, options?: zowe.IDownloadOptions
         ): Promise<zowe.IZosFilesResponse> {
-        return zowe.Download.dataSet(await this.getSession(), dataSetName, options);
+        return zowe.Download.dataSet(this.getSession(), dataSetName, options);
     }
 
     public async putContents(inputFilePath: string, dataSetName: string, options?: zowe.IUploadOptions
         ): Promise<zowe.IZosFilesResponse> {
-        return zowe.Upload.pathToDataSet(await this.getSession(), inputFilePath, dataSetName, options);
+        return zowe.Upload.pathToDataSet(this.getSession(), inputFilePath, dataSetName, options);
     }
 
     public async createDataSet(dataSetType: zowe.CreateDataSetTypeEnum, dataSetName: string, options?: Partial<zowe.ICreateDataSetOptions>
         ): Promise<zowe.IZosFilesResponse> {
-        return zowe.Create.dataSet(await (this.getSession()), dataSetType, dataSetName, options);
+        return zowe.Create.dataSet(this.getSession(), dataSetType, dataSetName, options);
     }
 
     public async createDataSetMember(dataSetName: string, options?: zowe.IUploadOptions
         ): Promise<zowe.IZosFilesResponse> {
-        return zowe.Upload.bufferToDataSet(await this.getSession(), Buffer.from(""), dataSetName, options);
+        return zowe.Upload.bufferToDataSet(this.getSession(), Buffer.from(""), dataSetName, options);
     }
 
     public async allocateLikeDataSet(dataSetName: string, likeDataSetName: string): Promise<zowe.IZosFilesResponse> {
-        return zowe.Create.dataSetLike(await this.getSession(), dataSetName, likeDataSetName);
+        return zowe.Create.dataSetLike(this.getSession(), dataSetName, likeDataSetName);
     }
 
     public async copyDataSetMember(
@@ -207,7 +190,7 @@ export class ZosmfMvsApi extends ZosmfApiCommon implements ZoweExplorerApi.IMvs 
             // If we decide to match 1:1 the Zowe.Copy.dataSet implementation, we will need to break the interface definition in the ZoweExploreApi
             newOptions = {fromDataSet: { dataSetName: fromDataSetName, memberName: fromMemberName }};
         }
-        return zowe.Copy.dataSet(await this.getSession(),
+        return zowe.Copy.dataSet(this.getSession(),
             { dataSetName: toDataSetName, memberName: toMemberName },
             newOptions
         );
@@ -215,27 +198,27 @@ export class ZosmfMvsApi extends ZosmfApiCommon implements ZoweExplorerApi.IMvs 
 
     public async renameDataSet(currentDataSetName: string, newDataSetName: string
         ): Promise<zowe.IZosFilesResponse> {
-        return zowe.Rename.dataSet(await this.getSession(), currentDataSetName, newDataSetName);
+        return zowe.Rename.dataSet(this.getSession(), currentDataSetName, newDataSetName);
     }
 
     public async renameDataSetMember(dataSetName: string, oldMemberName: string, newMemberName: string,
     ): Promise<zowe.IZosFilesResponse> {
-        return zowe.Rename.dataSetMember(await this.getSession(), dataSetName, oldMemberName, newMemberName);
+        return zowe.Rename.dataSetMember(this.getSession(), dataSetName, oldMemberName, newMemberName);
     }
 
     public async hMigrateDataSet(dataSetName: string,
     ): Promise<zowe.IZosFilesResponse> {
-        return zowe.HMigrate.dataSet(await this.getSession(), dataSetName);
+        return zowe.HMigrate.dataSet(this.getSession(), dataSetName);
     }
 
     public async hRecallDataSet(dataSetName: string,
     ): Promise<zowe.IZosFilesResponse> {
-        return zowe.HRecall.dataSet(await this.getSession(), dataSetName);
+        return zowe.HRecall.dataSet(this.getSession(), dataSetName);
     }
 
     public async deleteDataSet(dataSetName: string, options?: zowe.IDeleteDatasetOptions
         ): Promise<zowe.IZosFilesResponse> {
-            return zowe.Delete.dataSet(await this.getSession(), dataSetName);
+            return zowe.Delete.dataSet(this.getSession(), dataSetName);
     }
 }
 
@@ -244,39 +227,39 @@ export class ZosmfMvsApi extends ZosmfApiCommon implements ZoweExplorerApi.IMvs 
  */
 export class ZosmfJesApi extends ZosmfApiCommon implements ZoweExplorerApi.IJes {
 
-    public async getJobsByOwnerAndPrefix(owner: string, prefix: string): Promise<zowe.IJob[]> {
-        return zowe.GetJobs.getJobsByOwnerAndPrefix(await this.getSession(), owner, prefix);
+    public getJobsByOwnerAndPrefix(owner: string, prefix: string): Promise<zowe.IJob[]> {
+        return zowe.GetJobs.getJobsByOwnerAndPrefix(this.getSession(), owner, prefix);
     }
 
-    public async getJob(jobid: string): Promise<zowe.IJob> {
-        return zowe.GetJobs.getJob(await this.getSession(), jobid);
+    public getJob(jobid: string): Promise<zowe.IJob> {
+        return zowe.GetJobs.getJob(this.getSession(), jobid);
     }
 
-    public async getSpoolFiles(jobname: string, jobid: string): Promise<zowe.IJobFile[]> {
-        return zowe.GetJobs.getSpoolFiles(await this.getSession(), jobname, jobid);
+    public getSpoolFiles(jobname: string, jobid: string): Promise<zowe.IJobFile[]> {
+        return zowe.GetJobs.getSpoolFiles(this.getSession(), jobname, jobid);
     }
 
-    public async downloadSpoolContent(parms: zowe.IDownloadAllSpoolContentParms): Promise<void> {
-        return zowe.DownloadJobs.downloadAllSpoolContentCommon(await this.getSession(), parms);
+    public downloadSpoolContent(parms: zowe.IDownloadAllSpoolContentParms): Promise<void> {
+        return zowe.DownloadJobs.downloadAllSpoolContentCommon(this.getSession(), parms);
     }
 
-    public async getSpoolContentById(jobname: string, jobid: string, spoolId: number): Promise<string> {
-        return zowe.GetJobs.getSpoolContentById(await this.getSession(), jobname, jobid, spoolId);
+    public getSpoolContentById(jobname: string, jobid: string, spoolId: number): Promise<string> {
+        return zowe.GetJobs.getSpoolContentById(this.getSession(), jobname, jobid, spoolId);
     }
 
-    public async getJclForJob(job: zowe.IJob): Promise<string> {
-        return zowe.GetJobs.getJclForJob(await this.getSession(), job);
+    public getJclForJob(job: zowe.IJob): Promise<string> {
+        return zowe.GetJobs.getJclForJob(this.getSession(), job);
     }
 
-    public async submitJcl(jcl: string, internalReaderRecfm?: string, internalReaderLrecl?: string): Promise<zowe.IJob> {
-        return zowe.SubmitJobs.submitJcl(await this.getSession(), jcl, internalReaderRecfm, internalReaderLrecl);
+    public submitJcl(jcl: string, internalReaderRecfm?: string, internalReaderLrecl?: string): Promise<zowe.IJob> {
+        return zowe.SubmitJobs.submitJcl(this.getSession(), jcl, internalReaderRecfm, internalReaderLrecl);
     }
 
-    public async submitJob(jobDataSet: string): Promise<zowe.IJob> {
-        return zowe.SubmitJobs.submitJob(await this.getSession(), jobDataSet);
+    public submitJob(jobDataSet: string): Promise<zowe.IJob> {
+        return zowe.SubmitJobs.submitJob(this.getSession(), jobDataSet);
     }
 
-    public async deleteJob(jobname: string, jobid: string): Promise<void> {
-        return zowe.DeleteJobs.deleteJob(await this.getSession(), jobname, jobid);
+    public deleteJob(jobname: string, jobid: string): Promise<void> {
+        return zowe.DeleteJobs.deleteJob(this.getSession(), jobname, jobid);
     }
 }

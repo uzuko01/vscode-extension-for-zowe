@@ -175,7 +175,7 @@ export class Profiles {
                             vscode.window.showInformationMessage(
                                 localize("Profiles.validateProfiles.validationCancelled", "Validating {0} was cancelled.", theProfile.name));
                         });
-                        return getSessStatus.getStatus(theProfile, theProfile.type, prompt);
+                        return getSessStatus.getStatus(theProfile, theProfile.type);
                     });
                 } else {
                     profileStatus = "unverified";
