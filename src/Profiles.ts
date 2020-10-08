@@ -843,7 +843,10 @@ export class Profiles {
     public async getValidSession(serviceProfile: IProfileLoaded,
                                  prompt?: boolean): Promise<Session | null> {
             const getSessStatus = await ZoweExplorerApiRegister.getInstance().getCommonApi(serviceProfile);
-            if (getSessStatus.getSessionFromCommandArgument) {
+
+            if (!getSessStatus.getSessionFromCommandArgument) {
+                return ZoweExplorerApiRegister.getInstance().getCommonApi(serviceProfile).getSession();
+            }
 
             const baseProfile = await getBaseProfile();
 
@@ -937,12 +940,9 @@ export class Profiles {
                     return new Session(connectableSessCfg);
                 } catch (error) {
                     await errorHandling(error);
-                }
             }
-        } else {
-            return ZoweExplorerApiRegister.getInstance().getCommonApi(serviceProfile).getSession();
         }
-        }
+    }
 
     private async deletePrompt(deletedProfile: IProfileLoaded) {
         const profileName = deletedProfile.name;
