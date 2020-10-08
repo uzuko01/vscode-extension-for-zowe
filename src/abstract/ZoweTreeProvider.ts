@@ -152,7 +152,7 @@ export class ZoweTreeProvider {
             // Get the active session
             let EditSession;
             try {
-                EditSession = Profiles.getInstance().getValidSession(node.getProfile(), false);
+                EditSession = await Profiles.getInstance().getValidSession(node.getProfile(), false);
             } catch (err) {
                 await errorHandling(err);
             }
