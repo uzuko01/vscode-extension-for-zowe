@@ -10,7 +10,7 @@
 */
 
 import * as zowe from "@zowe/cli";
-import { IProfile, IProfileLoaded, Session, ISession, ICommandArguments } from "@zowe/imperative";
+import { IProfileLoaded, Session, ICommandArguments } from "@zowe/imperative";
 import { TreeItem } from "vscode";
 
 /**

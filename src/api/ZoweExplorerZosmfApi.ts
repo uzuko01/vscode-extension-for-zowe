@@ -10,12 +10,9 @@
 */
 
 import * as zowe from "@zowe/cli";
-import { Session, IProfileLoaded, ITaskWithStatus, ICommandArguments, ISession, ConnectionPropsForSessCfg } from "@zowe/imperative";
+import { Session, IProfileLoaded, ITaskWithStatus, ICommandArguments } from "@zowe/imperative";
 import { ZoweExplorerApi } from "./ZoweExplorerApi";
 import * as nls from "vscode-nls";
-import { errorHandling } from "../utils";
-import { collectProfileDetails, getBaseProfile } from "../profiles/utils";
-import { Profiles } from "../Profiles";
 
 // Set up localization
 nls.config({ messageFormat: nls.MessageFormat.bundle, bundleFormat: nls.BundleFormat.standalone })();

@@ -13,7 +13,6 @@ import { IProfileLoaded, Logger, CliProfileManager, IProfile, IUpdateProfile, IS
 import * as path from "path";
 import * as vscode from "vscode";
 import * as globals from "./globals";
-import * as contextually from "./shared/context";
 import { ZoweExplorerApiRegister } from "./api/ZoweExplorerApiRegister";
 import { errorHandling, getZoweDir, FilterDescriptor, FilterItem, resolveQuickPickHelper, setProfile, setSession } from "./utils";
 import { IZoweTree } from "./api/IZoweTree";
