@@ -114,7 +114,7 @@ export class MvsCommandHandler {
 
             // Get valid session
             // session = await getValidSession(zosmfProfile, zosmfProfile.name, false);
-            session = await ZoweExplorerApiRegister.getMvsApi(zosmfProfile).getSession();
+            session = await Profiles.getInstance().getValidSession(zosmfProfile);
 
             let command1: string = command;
             if (!command) {

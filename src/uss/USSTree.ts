@@ -598,7 +598,7 @@ export class USSTree extends ZoweTreeProvider implements IZoweTree<IZoweUSSTreeN
              // If no profile/session yet, then add session and profile to parent profile node in this.mFavorites array:
             try {
                 profile = Profiles.getInstance().loadNamedProfile(profileName);
-                session = await ZoweExplorerApiRegister.getUssApi(profile).getSession(null, true);
+                session = await Profiles.getInstance().getValidSession(profile, true);
                 parentNode.setProfileToChoice(profile);
                 parentNode.setSessionToChoice(session);
                 // Set mProfileName for the getProfileName function, but after initialization of child fav nodes.
@@ -691,7 +691,7 @@ export class USSTree extends ZoweTreeProvider implements IZoweTree<IZoweUSSTreeN
             try {
                 // Uses loaded profile to create a session with the USS API
                 // session = await getValidSession(profileLoaded, profileLoaded.name, false);
-                session = await ZoweExplorerApiRegister.getUssApi(profileLoaded).getSession();
+                session = await Profiles.getInstance().getValidSession(profileLoaded);
             } catch (error) {
                 await errorHandling(error);
             }

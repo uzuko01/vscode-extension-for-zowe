@@ -152,7 +152,7 @@ export class ZoweTreeProvider {
             // Get the active session
             let EditSession;
             try {
-                EditSession = await ZoweExplorerApiRegister.getMvsApi(node.getProfile()).getSession(null, false);
+                EditSession = Profiles.getInstance().getValidSession(node.getProfile(), false);
             } catch (err) {
                 await errorHandling(err);
             }
@@ -217,7 +217,7 @@ export class ZoweTreeProvider {
                 await setSession(sessionNode, profile.profile as ISession);
             } else {
                 // const newSession = await getValidSession(profile, profile.name, false);
-                const newSession = await ZoweExplorerApiRegister.getMvsApi(profile).getSession();
+                const newSession = await Profiles.getInstance().getValidSession(profile);
                 const changedProfileIndex = Profiles.getInstance().allProfiles.findIndex((searchedProfile) => searchedProfile.name === profile.name);
                 Profiles.getInstance().allProfiles[changedProfileIndex] = profile;
                 await setProfile(sessionNode, profile.profile);

@@ -9,7 +9,7 @@
 *                                                                                 *
 */
 
-import { IProfileLoaded, Logger, CliProfileManager, IProfile, IUpdateProfile, ISession } from "@zowe/imperative";
+import { IProfileLoaded, Logger, CliProfileManager, IProfile, IUpdateProfile, ISession, Session, ICommandArguments, ConnectionPropsForSessCfg } from "@zowe/imperative";
 import * as path from "path";
 import * as vscode from "vscode";
 import * as globals from "./globals";
@@ -82,10 +82,7 @@ export class Profiles {
                     baseProfile.profile.host !== profileLoaded.profile.host))) {
                 await this.promptCredentials(profileLoaded);
             } else {
-                const getSessStatus = await ZoweExplorerApiRegister.getInstance().getCommonApi(profileLoaded);
-                if (getSessStatus.getValidSession) {
-                    await getSessStatus.getValidSession(profileLoaded, profileLoaded.name, prompt);
-                }
+                await this.getValidSession(profileLoaded, prompt);
             }
 
             const profileStatus = await this.getProfileSetting(profileLoaded, prompt);
@@ -842,6 +839,110 @@ export class Profiles {
             await errorHandling(error);
         }
     }
+
+    public async getValidSession(serviceProfile: IProfileLoaded,
+                                 prompt?: boolean): Promise<Session | null> {
+            const getSessStatus = await ZoweExplorerApiRegister.getInstance().getCommonApi(serviceProfile);
+            if (getSessStatus.getSessionFromCommandArgument) {
+
+            const baseProfile = await getBaseProfile();
+
+            // If user exists in serviceProfile, use serviceProfile to login because it has precedence over baseProfile
+            // If no user & no baseProfile, use serviceProfile as default
+            // If no user & no token, use serviceProfile as default
+            if (serviceProfile.profile.user || !baseProfile || (!serviceProfile.profile.user && !serviceProfile.profile.basePath)) {
+                if (prompt) {
+                    // Select for prompting only fields which are not defined
+                    const schemaArray = [];
+                    if (!serviceProfile.profile.user && (!baseProfile || (baseProfile && !baseProfile.profile.user))) {
+                        if (!serviceProfile.profile.basePath) {
+                            schemaArray.push("user");
+                        }
+                    }
+                    if (!serviceProfile.profile.password && (!baseProfile || (baseProfile && !baseProfile.profile.password))) {
+                        schemaArray.push("password");
+                    }
+                    if (!serviceProfile.profile.host && (!baseProfile || (baseProfile && !baseProfile.profile.host))) {
+                        schemaArray.push("host");
+                        if (!serviceProfile.profile.port && (!baseProfile || (baseProfile && !baseProfile.profile.port))) {
+                            schemaArray.push("port");
+                        }
+                    }
+
+                    try {
+                        const newDetails = await collectProfileDetails(schemaArray, null, null, false);
+                        for (const detail of schemaArray) {
+                            if (detail === "host") { serviceProfile.profile.host = newDetails[detail]; }
+                            else { serviceProfile.profile[detail] = newDetails[detail]; }
+                        }
+                    } catch (error) {
+                        await errorHandling(error);
+                    }
+                }
+                const cmdArgs: ICommandArguments = {
+                    $0: "zowe",
+                    _: [""],
+                    host: serviceProfile.profile.host ? serviceProfile.profile.host :
+                    (baseProfile ? baseProfile.profile.host : undefined),
+                    port: serviceProfile.profile.port ? serviceProfile.profile.port :
+                    (baseProfile ? baseProfile.profile.port : 0),
+                    basePath: serviceProfile.profile.basePath ? serviceProfile.profile.basePath :
+                    (baseProfile ? baseProfile.profile.basePath : undefined),
+                    rejectUnauthorized: serviceProfile.profile.rejectUnauthorized !== null ?
+                    serviceProfile.profile.rejectUnauthorized :
+                    (baseProfile ? baseProfile.profile.rejectUnauthorized : true),
+                    user: serviceProfile.profile.user ? serviceProfile.profile.user :
+                    (baseProfile ? baseProfile.profile.user : undefined),
+                    password: serviceProfile.profile.password ? serviceProfile.profile.password :
+                    (baseProfile ? baseProfile.profile.password : undefined),
+                    tokenType: (baseProfile && !serviceProfile.profile.password) ? baseProfile.profile.tokenType : undefined,
+                    tokenValue: (baseProfile && !serviceProfile.profile.password) ? baseProfile.profile.tokenValue : undefined
+                };
+                return getSessStatus.getSessionFromCommandArgument(cmdArgs);
+            } else if (baseProfile) {
+                // baseProfile exists, so APIML login is possible
+                const sessCfg: ISession = {
+                    rejectUnauthorized: (serviceProfile.profile.rejectUnauthorized != null ? serviceProfile.profile.rejectUnauthorized :
+                    baseProfile.profile.rejectUnauthorized),
+                    basePath: serviceProfile.profile.basePath,
+                    hostname: serviceProfile.profile.host ? serviceProfile.profile.host : baseProfile.profile.host,
+                    port: serviceProfile.profile.port ? serviceProfile.profile.port : baseProfile.profile.port,
+                };
+
+                const cmdArgs: ICommandArguments = {
+                    $0: "zowe",
+                    _: [""],
+                    tokenType: baseProfile.profile.tokenType,
+                    tokenValue: baseProfile.profile.tokenValue
+                };
+
+                try {
+                    let connectableSessCfg: ISession;
+                    if (prompt) {
+                        connectableSessCfg = await ConnectionPropsForSessCfg.addPropsOrPrompt(sessCfg,
+                            cmdArgs,
+                            {
+                                requestToken: false,
+                                doPrompting: prompt,
+                                getValuesBack: collectProfileDetails
+                            });
+                        } else {
+                            connectableSessCfg = await ConnectionPropsForSessCfg.addPropsOrPrompt(sessCfg,
+                            cmdArgs,
+                            {
+                                requestToken: false,
+                                doPrompting: false
+                            });
+                    }
+                    return new Session(connectableSessCfg);
+                } catch (error) {
+                    await errorHandling(error);
+                }
+            }
+        } else {
+            return ZoweExplorerApiRegister.getInstance().getCommonApi(serviceProfile).getSession();
+        }
+        }
 
     private async deletePrompt(deletedProfile: IProfileLoaded) {
         const profileName = deletedProfile.name;

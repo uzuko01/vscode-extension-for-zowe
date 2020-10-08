@@ -10,7 +10,7 @@
 */
 
 import * as zowe from "@zowe/cli";
-import { IProfile, IProfileLoaded, Session } from "@zowe/imperative";
+import { IProfile, IProfileLoaded, Session, ISession, ICommandArguments } from "@zowe/imperative";
 import { TreeItem } from "vscode";
 
 /**
@@ -42,7 +42,7 @@ export namespace ZoweExplorerApi {
          *      will use the profile the API was retrieved with by default
          * @returns {Session} a Zowe CLI Session
          */
-        getSession(profile?: IProfileLoaded, prompt?: boolean): Promise<Session>;
+        getSession(profile?: IProfileLoaded, prompt?: boolean): Session;
 
         /**
          * Create a session for the specific profile type.
@@ -52,6 +52,8 @@ export namespace ZoweExplorerApi {
          * @returns {IZosmfInfoResponse} z/OSMF Check Status response
          */
         getStatus?(profile: IProfileLoaded, profileType?, prompt?: boolean): Promise<string>;
+
+        getSessionFromCommandArgument(cmdArgs: ICommandArguments): Session;
 
         /**
          * Get a valid session which can be used to connect to z/OS
@@ -67,7 +69,7 @@ export namespace ZoweExplorerApi {
          *      should the user be prompted in the GUI?
          * @returns {IZosmfInfoResponse} z/OSMF Check Status response
          */
-        getValidSession?(serviceProfile: IProfileLoaded, profileName: string, prompt?: boolean): Promise<Session>;
+        // getValidSession?(serviceProfile: IProfileLoaded, profileName: string, prompt?: boolean): Promise<Session>;
     }
 
     /**

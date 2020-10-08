@@ -22,6 +22,7 @@ import * as contextually from "../shared/context";
 
 import * as nls from "vscode-nls";
 import { refreshTree } from "../shared/utils";
+import { Profiles } from "../Profiles";
 // Set up localization
 nls.config({ messageFormat: nls.MessageFormat.bundle, bundleFormat: nls.BundleFormat.standalone })();
 const localize: nls.LocalizeFunc = nls.loadMessageBundle();
@@ -96,7 +97,7 @@ export class Job extends ZoweTreeNode implements IZoweJobTreeNode {
                     }
                 });
             } else {
-                const sessUser = (await ZoweExplorerApiRegister.getJesApi(this.getProfile()).getSession()).ISession.user;
+                const sessUser = (await Profiles.getInstance().getValidSession(this.getProfile())).ISession.user;
                 const jobOwner = this._owner ? this._owner : (sessUser ? sessUser : "*");
                 const jobs = await vscode.window.withProgress({
                     location: vscode.ProgressLocation.Notification,
