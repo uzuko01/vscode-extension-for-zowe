@@ -53,7 +53,7 @@ export namespace ZoweExplorerApi {
          */
         getStatus?(profile: IProfileLoaded, profileType?, prompt?: boolean): Promise<string>;
 
-        getSessionFromCommandArgument(cmdArgs: ICommandArguments): Session;
+        getSessionFromCommandArgument?(cmdArgs: ICommandArguments): Session;
 
         /**
          * Get a valid session which can be used to connect to z/OS
