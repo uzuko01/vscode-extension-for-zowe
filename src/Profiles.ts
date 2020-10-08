@@ -184,23 +184,18 @@ export class Profiles {
         // status will be stored in profilesForValidation
         if (filteredProfile === undefined) {
             try {
-                if (getSessStatus.getStatus) {
-                    profileStatus = await vscode.window.withProgress({
-                        location: vscode.ProgressLocation.Notification,
-                        title: localize("Profiles.validateProfiles.validationProgress", "Validating {0} Profile.", theProfile.name),
-                        cancellable: true
-                    }, async (progress, token) => {
-                        token.onCancellationRequested(() => {
-                            // will be returned as undefined
-                            vscode.window.showInformationMessage(
-                                localize("Profiles.validateProfiles.validationCancelled", "Validating {0} was cancelled.", theProfile.name));
-                        });
-                        return getSessStatus.getStatus(theProfile, theProfile.type, prompt);
+                profileStatus = await vscode.window.withProgress({
+                    location: vscode.ProgressLocation.Notification,
+                    title: localize("Profiles.validateProfiles.validationProgress", "Validating {0} Profile.", theProfile.name),
+                    cancellable: true
+                }, async (progress, token) => {
+                    token.onCancellationRequested(() => {
+                        // will be returned as undefined
+                        vscode.window.showInformationMessage(
+                            localize("Profiles.validateProfiles.validationCancelled", "Validating {0} was cancelled.", theProfile.name));
                     });
-                } else {
-                    profileStatus = "unverified";
-                }
-
+                    return this.getStatus(theProfile, prompt);
+                });
                 filteredProfile = { status: profileStatus, name: theProfile.name };
             } catch (error) {
                 this.log.debug("Validate Error - Invalid Profile: " + error);
@@ -840,11 +835,36 @@ export class Profiles {
         }
     }
 
+    public async getStatus(validateProfile?: IProfileLoaded, prompt?: boolean): Promise<string> {
+        const validateSession = await this.getValidSession(validateProfile, prompt);
+        if (validateSession) {
+            const commonApi = await ZoweExplorerApiRegister.getInstance().getCommonApi(validateProfile);
+            if (commonApi.getStatus) {
+                const status = await commonApi.getStatus(validateProfile);
+                if (status === "active") {
+                    // Store the valid connection details in the profile
+                    Object.keys(validateProfile.profile).forEach((profileKey) => {
+                        Object.keys(validateSession.ISession).forEach((sessionKey) => {
+                            if (profileKey === sessionKey && !validateProfile.profile[profileKey]) {
+                                validateProfile.profile[profileKey] = validateSession.ISession[sessionKey];
+                            }
+                            if (profileKey === "host" && sessionKey === "hostname" && !validateProfile.profile[profileKey]) {
+                                validateProfile.profile[profileKey] = validateSession.ISession[sessionKey];
+                            }
+                        });
+                    });
+                }
+            } else {
+                return "unverified"; // TODO: make type strong
+            }
+        }
+    }
+
     public async getValidSession(serviceProfile: IProfileLoaded,
                                  prompt?: boolean): Promise<Session | null> {
-            const getSessStatus = await ZoweExplorerApiRegister.getInstance().getCommonApi(serviceProfile);
+            const commonApi = await ZoweExplorerApiRegister.getInstance().getCommonApi(serviceProfile);
 
-            if (!getSessStatus.getSessionFromCommandArgument) {
+            if (!commonApi.getSessionFromCommandArgument) {
                 return ZoweExplorerApiRegister.getInstance().getCommonApi(serviceProfile).getSession();
             }
 
@@ -901,7 +921,7 @@ export class Profiles {
                     tokenType: (baseProfile && !serviceProfile.profile.password) ? baseProfile.profile.tokenType : undefined,
                     tokenValue: (baseProfile && !serviceProfile.profile.password) ? baseProfile.profile.tokenValue : undefined
                 };
-                return getSessStatus.getSessionFromCommandArgument(cmdArgs);
+                return commonApi.getSessionFromCommandArgument(cmdArgs);
             } else if (baseProfile) {
                 // baseProfile exists, so APIML login is possible
                 const sessCfg: ISession = {

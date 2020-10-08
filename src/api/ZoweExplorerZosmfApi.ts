@@ -50,35 +50,20 @@ class ZosmfApiCommon implements ZoweExplorerApi.ICommon {
         return zowe.ZosmfSession.createBasicZosmfSessionFromArguments(cmdArgs);
     }
 
-    public async getStatus(validateProfile?: IProfileLoaded, profileType?: string, prompt?: boolean): Promise<string> {
-        // This API call is specific for z/OSMF profiles
-        if (profileType === "zosmf") {
-            try {
-                const validateSession = await Profiles.getInstance().getValidSession(validateProfile, prompt);
-                let sessionStatus;
-                if (validateSession) { sessionStatus = await zowe.CheckStatus.getZosmfInfo(validateSession); }
-
-                if (sessionStatus) {
-                    // Store the valid connection details in the profile
-                    Object.keys(validateProfile.profile).forEach((profileKey) => {
-                        Object.keys(validateSession.ISession).forEach((sessionKey) => {
-                            if (profileKey === sessionKey && !validateProfile.profile[profileKey]) {
-                                validateProfile.profile[profileKey] = validateSession.ISession[sessionKey];
-                            }
-                            if (profileKey === "host" && sessionKey === "hostname" && !validateProfile.profile[profileKey]) {
-                                validateProfile.profile[profileKey] = validateSession.ISession[sessionKey];
-                            }
-                        });
-                    });
-                    return "active";
-                } else {
-                    return "inactive";
-                }
-            } catch (err) {
-                throw new Error(err);
+    public async getStatus(validateProfile?: IProfileLoaded, profileType?: string): Promise<string> {
+        try {
+            const validateSession = await this.getSession(validateProfile||this.profile);
+            let sessionStatus;
+            if (validateSession) {
+                sessionStatus = await zowe.CheckStatus.getZosmfInfo(validateSession);
             }
-        } else {
-            return "unverified";
+            if (sessionStatus) {
+                return "active";
+            } else {
+                return "inactive";
+            }
+        } catch (err) {
+            throw new Error(err);
         }
     }
 }

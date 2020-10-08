@@ -49,27 +49,21 @@ export namespace ZoweExplorerApi {
          *
          * @param {IProfileLoaded} profile
          *      will use the profile the API was retrieved with by default
-         * @returns {IZosmfInfoResponse} z/OSMF Check Status response
+         * @parm {string} profileType
+         * @returns {string} Status response
          */
-        getStatus?(profile: IProfileLoaded, profileType?, prompt?: boolean): Promise<string>;
-
-        getSessionFromCommandArgument?(cmdArgs: ICommandArguments): Session;
+        getStatus?(profile: IProfileLoaded, profileType?: string): Promise<string>;
+        // TODO: profileType should be deprecated again as it cannot be different than the type the API was instantiated with
 
         /**
-         * Get a valid session which can be used to connect to z/OS
+         * Create a session for a set command arguments. The session will be created independent
+         * of a specific profile using a specific API implementation that was created with a
+         * referece profile.
          *
-         * @param {IProfileLoaded} serviceProfile
-         *      a service-specific profile from which to pull connection info
-         * @param {string} profileName
-         *      the name of the profile for which a session is needed
-         * @param {IProfile} baseProfile
-         *      the APIML base profile from which to pull connection info
-         * @param {IProfile} prompt
-         *      if service & base profile contain insufficient connection info,
-         *      should the user be prompted in the GUI?
-         * @returns {IZosmfInfoResponse} z/OSMF Check Status response
+         * @param {ICommandArguments} cmdArgs a Zowe CLI ICommandArguments instance
+         * @returns {Session} a Zowe CLI Session
          */
-        // getValidSession?(serviceProfile: IProfileLoaded, profileName: string, prompt?: boolean): Promise<Session>;
+        getSessionFromCommandArgument?(cmdArgs: ICommandArguments): Session;
     }
 
     /**
