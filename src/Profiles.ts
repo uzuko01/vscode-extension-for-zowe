@@ -85,8 +85,6 @@ export class Profiles {
             }
 
             const profileStatus = await this.getProfileSetting(profileLoaded, prompt);
-            // tslint:disable-next-line:no-console
-            console.log(profileStatus);
             if (profileStatus.status === "unverified") {
                 this.validProfile = ValidProfileEnum.UNVERIFIED;
                 return profileStatus;
@@ -195,7 +193,7 @@ export class Profiles {
                         vscode.window.showInformationMessage(
                             localize("Profiles.validateProfiles.validationCancelled", "Validating {0} was cancelled.", theProfile.name));
                     });
-                    return this.getStatus(theProfile, prompt);
+                    return this.getStatus(theProfile, theProfile.type, prompt);
                 });
                 filteredProfile = { status: profileStatus, name: theProfile.name };
             } catch (error) {
@@ -836,12 +834,12 @@ export class Profiles {
         }
     }
 
-    public async getStatus(validateProfile?: IProfileLoaded, prompt?: boolean): Promise<string> {
+    public async getStatus(validateProfile?: IProfileLoaded, profileType?: string, prompt?: boolean): Promise<string> {
         const validateSession = await this.getValidSession(validateProfile, prompt);
         if (validateSession) {
             const commonApi = await ZoweExplorerApiRegister.getInstance().getCommonApi(validateProfile);
             if (commonApi.getStatus) {
-                const status = await commonApi.getStatus(validateProfile);
+                const status = await commonApi.getStatus(validateProfile, profileType);
                 if (status === "active") {
                     // Store the valid connection details in the profile
                     Object.keys(validateProfile.profile).forEach((profileKey) => {
@@ -856,12 +854,7 @@ export class Profiles {
                     });
                     return "active";
                 }
-                if (status === "inactive") {
-                    return "inactive";
-                }
-                if (status === "unverified") {
-                    return "unverified";
-                }
+                return status;
             } else {
                 return "unverified"; // TODO: make type strong
             }
