@@ -85,6 +85,8 @@ export class Profiles {
             }
 
             const profileStatus = await this.getProfileSetting(profileLoaded, prompt);
+            // tslint:disable-next-line:no-console
+            console.log(profileStatus);
             if (profileStatus.status === "unverified") {
                 this.validProfile = ValidProfileEnum.UNVERIFIED;
                 return profileStatus;
@@ -853,10 +855,12 @@ export class Profiles {
                         });
                     });
                     return "active";
-                } else {
-                    if (status === "inactive") {
-                        return "inactive";
-                    }
+                }
+                if (status === "inactive") {
+                    return "inactive";
+                }
+                if (status === "unverified") {
+                    return "unverified";
                 }
             } else {
                 return "unverified"; // TODO: make type strong
