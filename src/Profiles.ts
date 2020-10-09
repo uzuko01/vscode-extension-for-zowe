@@ -852,6 +852,11 @@ export class Profiles {
                             }
                         });
                     });
+                    return "active";
+                } else {
+                    if (status === "inactive") {
+                        return "inactive";
+                    }
                 }
             } else {
                 return "unverified"; // TODO: make type strong
