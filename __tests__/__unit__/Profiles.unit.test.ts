@@ -24,6 +24,7 @@ import * as profileUtils from "../../src/profiles/utils";
 import { ZosmfSession } from "@zowe/cli";
 import { ZoweUSSNode } from "../../src/uss/ZoweUSSNode";
 import { ZoweExplorerApiRegister } from "../../src/api/ZoweExplorerApiRegister";
+import { ZosmfUssApi } from "../../src/api/ZoweExplorerZosmfApi";
 import { ZoweDatasetNode } from "../../src/dataset/ZoweDatasetNode";
 import { Job } from "../../src/job/ZoweJobNode";
 import { createUSSSessionNode, createUSSTree } from "../../__mocks__/mockCreators/uss";
@@ -1973,7 +1974,7 @@ describe("Profiles Unit Tests - Function validateProfiles", () => {
 describe("Profiles Unit Tests - Function getValidSession", () => {
     async function createBlockMocks() {
         const newMocks = {
-            profiles: null,
+            profiles: null as Profiles,
             sessionNoCredentials: createISessionWithoutCredentials(),
             profileInstance: null,
             mockGetbaseProfile: jest.fn(),
@@ -1997,6 +1998,7 @@ describe("Profiles Unit Tests - Function getValidSession", () => {
             mockGetCommonApi: jest.fn(),
             mockConfigurationTarget: jest.fn(),
             mockCreateBasicZosmfSessionFromArguments: jest.fn(),
+            mockGetStatus: jest.fn(),
         };
 
         newMocks.mockCollectProfileDetails.mockResolvedValue(newMocks.serviceProfile.profile);
@@ -2025,6 +2027,9 @@ describe("Profiles Unit Tests - Function getValidSession", () => {
         Object.defineProperty(globals.LOG, "debug", { value: newMocks.mockDebug, configurable: true });
         Object.defineProperty(ZosmfSession, "createBasicZosmfSessionFromArguments",
                               { value: newMocks.mockCreateBasicZosmfSessionFromArguments, configurable: true });
+        Object.defineProperty(ZosmfUssApi, "getSessionFromCommandArgument",
+                              { value: newMocks.mockCreateBasicZosmfSessionFromArguments, configurable: true });
+        Object.defineProperty(ZosmfUssApi, "getStatus", { value: newMocks.mockGetStatus, configurable: true });
         Object.defineProperty(globals.LOG, "error", { value: newMocks.mockError, configurable: true });
         Object.defineProperty(globals, "ISTHEIA", { get: () => false, configurable: true });
         Object.defineProperty(vscode.window, "createTreeView", { value: jest.fn(), configurable: true });
@@ -2039,20 +2044,23 @@ describe("Profiles Unit Tests - Function getValidSession", () => {
         const blockMocks = await createBlockMocks();
 
         blockMocks.testSession.ISession.user = "testAddConnDetails";
-        blockMocks.baseProfile.profile.user = null;
+        blockMocks.serviceProfile.profile.user = null;
         blockMocks.testSession.ISession.hostname = "testAddConnDetailsHostname";
-        blockMocks.baseProfile.profile.host = null;
+        blockMocks.serviceProfile.profile.host = null;
+        blockMocks.mockCreateBasicZosmfSessionFromArguments.mockReturnValue(blockMocks.testSession);
+        blockMocks.mockGetStatus.mockReturnValue("active"); // TODO: figure out why this still return inactive
 
-        await blockMocks.profiles.getStatus(blockMocks.baseProfile, "zosmf");
-        expect(blockMocks.baseProfile.profile.user).toEqual("testAddConnDetails");
-        expect(blockMocks.baseProfile.profile.host).toEqual("testAddConnDetailsHostname");
+        await blockMocks.profiles.getStatus(blockMocks.serviceProfile, "zosmf");
+        expect(blockMocks.serviceProfile.profile.user).toEqual("testAddConnDetails");
+        expect(blockMocks.serviceProfile.profile.host).toEqual("testAddConnDetailsHostname");
     });
 
     it("Tests that getValidProfile tries to retrieve the baseProfile immediately, if it is not passed in", async () => {
         const blockMocks = await createBlockMocks();
 
         const getBaseSpy = jest.spyOn(profileUtils, "getBaseProfile");
-        await blockMocks.profiles.getValidSession(blockMocks.serviceProfile, "sestest");
+        getBaseSpy.mockReset();
+        await blockMocks.profiles.getValidSession(blockMocks.serviceProfile);
 
         expect(getBaseSpy).toHaveBeenCalledTimes(1);
     });
@@ -2065,7 +2073,7 @@ describe("Profiles Unit Tests - Function getValidSession", () => {
         blockMocks.baseProfile.profile.user = null;
         blockMocks.serviceProfile.profile.basePath = null;
 
-        await blockMocks.profiles.getValidSession(blockMocks.serviceProfile, "sestest", true);
+        await blockMocks.profiles.getValidSession(blockMocks.serviceProfile, true);
 
         expect(blockMocks.mockCollectProfileDetails).toHaveBeenCalledTimes(1);
         expect(blockMocks.mockCollectProfileDetails).toHaveBeenCalledWith(["user"], null, null, false);
@@ -2078,7 +2086,7 @@ describe("Profiles Unit Tests - Function getValidSession", () => {
         blockMocks.baseProfile.profile.password = null;
         blockMocks.baseProfile.profile.tokenValue = null;
 
-        await blockMocks.profiles.getValidSession(blockMocks.serviceProfile, "sestest", true);
+        await blockMocks.profiles.getValidSession(blockMocks.serviceProfile, true);
 
         expect(blockMocks.mockCollectProfileDetails).toHaveBeenCalledTimes(1);
         expect(blockMocks.mockCollectProfileDetails).toHaveBeenCalledWith(["password"], null, null, false);
@@ -2092,7 +2100,7 @@ describe("Profiles Unit Tests - Function getValidSession", () => {
         blockMocks.serviceProfile.profile.basePath = "test";
         blockMocks.baseProfile.profile.basePath = "test";
 
-        await blockMocks.profiles.getValidSession(blockMocks.serviceProfile, "sestest", true);
+        await blockMocks.profiles.getValidSession(blockMocks.serviceProfile, true);
 
         expect(blockMocks.mockCollectProfileDetails).toHaveBeenCalledTimes(1);
         expect(blockMocks.mockCollectProfileDetails).toHaveBeenCalledWith(["host"], null, null, false);
@@ -2108,7 +2116,7 @@ describe("Profiles Unit Tests - Function getValidSession", () => {
         blockMocks.serviceProfile.profile.basePath = "test";
         blockMocks.baseProfile.profile.basePath = "test";
 
-        await blockMocks.profiles.getValidSession(blockMocks.serviceProfile, "sestest", true);
+        await blockMocks.profiles.getValidSession(blockMocks.serviceProfile, true);
 
         expect(blockMocks.mockCollectProfileDetails).toHaveBeenCalledTimes(1);
         expect(blockMocks.mockCollectProfileDetails).toHaveBeenCalledWith(["host", "port"], null, null, false);
@@ -2131,7 +2139,7 @@ describe("Profiles Unit Tests - Function getValidSession", () => {
             basePath: "testBasePathNew"
         });
 
-        await blockMocks.profiles.getValidSession(blockMocks.serviceProfile, "sestest", true);
+        await blockMocks.profiles.getValidSession(blockMocks.serviceProfile, true);
 
         expect(blockMocks.mockCollectProfileDetails).toHaveBeenCalledTimes(1);
         expect(blockMocks.mockCollectProfileDetails).toHaveBeenCalledWith(["password", "host", "port"], null, null, false);
@@ -2146,7 +2154,7 @@ describe("Profiles Unit Tests - Function getValidSession", () => {
 
         let error;
         try {
-            await blockMocks.profiles.getValidSession(blockMocks.serviceProfile, "sestest", true);
+            await blockMocks.profiles.getValidSession(blockMocks.serviceProfile, true);
         } catch (err) {
             error = err;
         }
@@ -2164,7 +2172,7 @@ describe("Profiles Unit Tests - Function getValidSession", () => {
 
         let error;
         try {
-            await blockMocks.profiles.getValidSession(blockMocks.serviceProfile, "sestest", true);
+            await blockMocks.profiles.getValidSession(blockMocks.serviceProfile, true);
         } catch (err) {
             error = err;
         }
@@ -2183,7 +2191,7 @@ describe("Profiles Unit Tests - Function getValidSession", () => {
         Object.defineProperty(profileUtils, "getBaseProfile", { value: jest.fn().mockReturnValue(blockMocks.baseProfile), configurable: true });
         jest.spyOn(ConnectionPropsForSessCfg, "addPropsOrPrompt").mockRejectedValueOnce(testError);
 
-        await blockMocks.profiles.getValidSession(blockMocks.serviceProfile, "sestest", true);
+        await blockMocks.profiles.getValidSession(blockMocks.serviceProfile, true);
 
         expect(blockMocks.mockErrorHandling).toBeCalledWith(testError);
     });
@@ -2199,7 +2207,7 @@ describe("Profiles Unit Tests - Function getValidSession", () => {
         Object.defineProperty(profileUtils, "getBaseProfile", { value: jest.fn().mockReturnValue(blockMocks.baseProfile), configurable: true });
         jest.spyOn(ConnectionPropsForSessCfg, "addPropsOrPrompt").mockRejectedValueOnce(testError);
 
-        await blockMocks.profiles.getValidSession(blockMocks.serviceProfile, "sestest", true);
+        await blockMocks.profiles.getValidSession(blockMocks.serviceProfile, true);
 
         expect(blockMocks.mockErrorHandling).toBeCalledWith(testError);
     });
@@ -2221,7 +2229,7 @@ describe("Profiles Unit Tests - Function getValidSession", () => {
         delete serviceProfileNoPassword.profile.name;
         delete serviceProfileNoPassword.profile.type;
 
-        await blockMocks.profiles.getValidSession(blockMocks.serviceProfile, "sestest");
+        await blockMocks.profiles.getValidSession(blockMocks.serviceProfile);
 
         expect(blockMocks.mockCreateBasicZosmfSessionFromArguments).toBeCalledWith(serviceProfileNoPassword.profile);
     });
@@ -2231,7 +2239,7 @@ describe("Profiles Unit Tests - Function getValidSession", () => {
 
         blockMocks.mockCreateBasicZosmfSessionFromArguments.mockReturnValue(blockMocks.testSession);
 
-        const newSession = await blockMocks.profiles.getValidSession(blockMocks.serviceProfile, "sestest");
+        const newSession = await blockMocks.profiles.getValidSession(blockMocks.serviceProfile);
 
         expect(newSession).toEqual(blockMocks.testSession);
     });
@@ -2244,7 +2252,7 @@ describe("Profiles Unit Tests - Function getValidSession", () => {
         jest.spyOn(profileUtils, "getBaseProfile").mockReturnValueOnce(blockMocks.baseProfile);
         jest.spyOn(ConnectionPropsForSessCfg, "addPropsOrPrompt").mockResolvedValueOnce(blockMocks.testSession.ISession);
 
-        const newSession = await blockMocks.profiles.getValidSession(blockMocks.serviceProfile, "sestest", true);
+        const newSession = await blockMocks.profiles.getValidSession(blockMocks.serviceProfile, true);
 
         expect(newSession).toEqual(blockMocks.testSession);
     });
@@ -2257,7 +2265,7 @@ describe("Profiles Unit Tests - Function getValidSession", () => {
         jest.spyOn(profileUtils, "getBaseProfile").mockReturnValueOnce(blockMocks.baseProfile);
         jest.spyOn(ConnectionPropsForSessCfg, "addPropsOrPrompt").mockResolvedValueOnce(blockMocks.testSession.ISession);
 
-        const newSession = await blockMocks.profiles.getValidSession(blockMocks.serviceProfile, "sestest", false);
+        const newSession = await blockMocks.profiles.getValidSession(blockMocks.serviceProfile, false);
 
         expect(newSession).toEqual(blockMocks.testSession);
     });
