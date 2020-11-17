@@ -60,4 +60,4 @@ jobs:
 
       - run: cd packages/zowe-explorer
 
-      - run: yarn test:theia
+      - run: npm run test:theia
