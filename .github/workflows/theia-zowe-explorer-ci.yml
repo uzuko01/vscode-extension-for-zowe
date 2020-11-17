@@ -58,6 +58,6 @@ jobs:
       - name: Prep integration test files
         run: yarn build
 
-      - run: cd packages/zowe-explorer
-
-      - run: npm run test:theia
+      - run: |
+          cd packages/zowe-explorer
+          npm run test:theia
