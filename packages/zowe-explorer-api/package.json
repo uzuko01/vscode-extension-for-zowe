@@ -16,6 +16,7 @@
   "scripts": {
     "build": "yarn clean && yarn license && tsc -p ./",
     "test": "echo \"zowe-explorer-api: coming soon.\"",
+    "test:theia": "echo \"zowe-explorer-api: coming soon.\"",
     "lint": "echo \"zowe-explorer-api: coming soon.\"",
     "lintErrors": "echo \"zowe-explorer-api: coming soon.\"",
     "pretty": "prettier --write .",
