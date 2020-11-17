@@ -11,9 +11,6 @@ jobs:
       # check out source
       - uses: actions/checkout@v2
 
-      # install yarn
-      - run: npm install -g yarn
-
       # install dependencies
       - run: yarn install --frozen-lockfile
 
