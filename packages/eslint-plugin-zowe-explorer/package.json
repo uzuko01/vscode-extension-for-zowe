@@ -13,6 +13,7 @@
     "test": "jest",
     "build": "echo \"eslint-plugin: nothing to build.\"",
     "lint": "echo \"eslint-plugin: nothing to lint.\"",
+    "test:theia": "echo \"eslint-plugin: nothing to test.\"",
     "lintErrors": "echo \"eslint-plugin: nothing to lint.\"",
     "pretty": "echo \"eslint-plugin: nothing to pretty.\"",
     "package": "echo \"eslint-plugin: nothing to package.\""
