@@ -56,6 +56,6 @@ jobs:
         run: curl --fail http://localhost:3000
 
       - name: Prep integration test files
-        run: yarn build:integration
+        run: yarn build
 
       - run: yarn test:theia
