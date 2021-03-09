@@ -234,6 +234,10 @@ export interface IZoweUSSTreeNode extends IZoweTreeNode {
      * @param {USSTree} ussFileProvider
      */
     saveSearch?(ussFileProvider: IZoweTree<IZoweUSSTreeNode>);
+    /**
+     * Get parent path for USS node.
+     */
+    getParentPath?(): string;
 }
 
 /**
