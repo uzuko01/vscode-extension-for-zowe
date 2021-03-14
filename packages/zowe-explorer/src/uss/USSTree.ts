@@ -88,6 +88,13 @@ export class USSTree extends ZoweTreeProvider implements IZoweTree<IZoweUSSTreeN
      * @param {string} filePath
      */
     public async rename(originalNode: IZoweUSSTreeNode) {
+        const visTE = vscode.window.visibleTextEditors;
+        visTE.forEach((editor) => {
+            if (editor.document) {
+                console.log(editor.document.fileName);
+                console.log(editor.document.isDirty);
+            }
+        });
         // Could be a favorite or regular entry always deal with the regular entry
         const parentPath = originalNode.fullPath.substr(0, originalNode.fullPath.indexOf(originalNode.label));
         // Check if an old favorite exists for this node
@@ -108,9 +115,19 @@ export class USSTree extends ZoweTreeProvider implements IZoweTree<IZoweUSSTreeN
                 let newNamePath = path.join(parentPath + newName);
                 newNamePath = newNamePath.replace(/\\/g, "/"); // Added to cover Windows backslash issue
                 const oldNamePath = originalNode.fullPath;
-
                 // // Handle rename in back-end:
-                await ZoweExplorerApiRegister.getUssApi(originalNode.getProfile()).rename(oldNamePath, newNamePath);
+                // await ZoweExplorerApiRegister.getUssApi(originalNode.getProfile()).rename(oldNamePath, newNamePath);
+                const currentFilePath = originalNode.getUSSDocumentFilePath();
+                const oldFileUri: vscode.Uri = vscode.Uri.file(currentFilePath);
+                const newFileUri: vscode.Uri = vscode.Uri.file(
+                    path.join(
+                        globals.USS_DIR || "",
+                        "/" + originalNode.getSessionNode().getProfileName() + "/",
+                        newNamePath
+                    )
+                );
+
+                vscode.workspace.fs.rename(oldFileUri, newFileUri);
 
                 // Handle rename in UI:
                 if (oldFavorite) {
@@ -124,8 +141,11 @@ export class USSTree extends ZoweTreeProvider implements IZoweTree<IZoweUSSTreeN
                     }
                 }
                 // Rename originalNode in UI
-                const hasClosedTab = await originalNode.rename(newNamePath);
-                await originalNode.refreshAndReopen(hasClosedTab);
+
+                // await originalNode.rename(newNamePath); //NEED
+
+                // const hasClosedTab = await originalNode.rename(newNamePath);
+                // await originalNode.refreshAndReopen(hasClosedTab);
                 this.updateFavorites();
             } catch (err) {
                 errorHandling(
