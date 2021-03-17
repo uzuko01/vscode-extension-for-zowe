@@ -25,7 +25,6 @@ import { injectAdditionalDataToTooltip } from "../uss/utils";
 import * as contextually from "../shared/context";
 import { closeOpenedTextFile } from "../utils/workspace";
 import * as nls from "vscode-nls";
-import { Uri } from "vscode";
 
 // Set up localization
 nls.config({
@@ -299,53 +298,24 @@ export class ZoweUSSNode extends ZoweTreeNode implements IZoweUSSTreeNode {
     }
 
     /**
-     * Helper method to change the UI node names in one go
+     * Helper method to change the UI node names and local filenames in one go
      * @param newFullPath string
      */
     public async rename(newFullPath: string) {
         const currentFilePath = this.getUSSDocumentFilePath();
-        console.log("oldpath: " + currentFilePath);
         // const hasClosedInstance = await closeOpenedTextFile(currentFilePath);
         this.fullPath = newFullPath;
         this.shortLabel = newFullPath.split("/").pop();
         this.label = this.shortLabel;
         this.tooltip = injectAdditionalDataToTooltip(this, newFullPath);
-        // Update the full path of any children already loaded locally
-        // TODO: Check if child opens cached file with old name path
-        const oldFileUri: Uri = vscode.Uri.file(currentFilePath);
-        const newFileUri: Uri = vscode.Uri.file(this.getUSSDocumentFilePath());
 
+        // Recursively rename any children in the UI
         if (this.children.length > 0) {
             this.children.forEach((child) => {
-                let newChildFullPath = newFullPath + "/" + child.shortLabel;
+                const newChildFullPath = newFullPath + "/" + child.shortLabel;
                 child.rename(newChildFullPath);
             });
         }
-        const visTE = vscode.window.visibleTextEditors;
-        visTE.forEach((editor) => {
-            if (editor.document) {
-                console.log(editor.document.fileName);
-                console.log(editor.document.isDirty);
-            }
-        });
-        // vscode.workspace.fs.rename(oldFileUri, newFileUri);
-        // TODO: handle when renaming unsaved open file (or child file)
-        ///////////////// START LOGGING
-        // console.log("vscode.window.activeTextEditor: " + vscode.window.activeTextEditor.document.fileName);
-        // console.log("vscode.window.visibleTextEditors: ");
-        // const visTE = vscode.window.visibleTextEditors;
-        // visTE.forEach((editor) => {
-        //     if (editor.document) {
-        //         console.log(editor.document.fileName);
-        //         editor.document.isDirty
-        //     }
-        // });
-        // console.log("vscode.workspace.textDocuments: ");
-        // const td = vscode.workspace.textDocuments;
-        // td.forEach((doc) => {
-        //     console.log(doc.fileName);
-        // });
-        ////////////////// END LOGGING
         await vscode.commands.executeCommand("zowe.uss.refreshUSSInTree", this);
         // return hasClosedInstance;
         return;

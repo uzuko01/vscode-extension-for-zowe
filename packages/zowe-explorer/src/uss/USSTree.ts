@@ -88,21 +88,42 @@ export class USSTree extends ZoweTreeProvider implements IZoweTree<IZoweUSSTreeN
      * @param {string} filePath
      */
     public async rename(originalNode: IZoweUSSTreeNode) {
-        const visTE = vscode.window.visibleTextEditors;
-        visTE.forEach((editor) => {
-            if (editor.document) {
-                console.log(editor.document.fileName);
-                console.log(editor.document.isDirty);
-            }
-        });
         // Could be a favorite or regular entry always deal with the regular entry
         const parentPath = originalNode.fullPath.substr(0, originalNode.fullPath.indexOf(originalNode.label));
         // Check if an old favorite exists for this node
         const oldFavorite: IZoweUSSTreeNode = contextually.isFavorite(originalNode)
             ? originalNode
             : this.findFavoritedNode(originalNode);
-        const loadedNodes = await this.getAllLoadedItems();
         const nodeType = contextually.isFolder(originalNode) ? "folder" : "file";
+        const currentFilePath = originalNode.getUSSDocumentFilePath(); // The user's complete local file path for the node
+        const openDocs = vscode.workspace.textDocuments; // Array of all documents open in VS Code
+
+        // If the USS node or any of its children are locally open with unsaved data, prevent rename until user saves their work.
+        // This prevents unexpected behavior from VS Code's rename API.
+        for (const doc of openDocs) {
+            if (doc.fileName.includes(currentFilePath)) {
+                if (doc.isDirty === true) {
+                    vscode.window.showErrorMessage(
+                        localize(
+                            "renameUSS.unsavedWork",
+                            // tslint:disable-next-line:max-line-length
+                            "Unable to rename {0} because you have unsaved changes in this {1}. Please save your work and try renaming the {1} again.",
+                            originalNode.fullPath,
+                            nodeType
+                        ),
+                        { modal: true }
+                    );
+                    return;
+                }
+                // tslint:disable-next-line: no-console
+                console.log(doc.fileName);
+                // tslint:disable-next-line: no-console
+                console.log(doc.isDirty);
+            }
+        }
+
+        // Proceed with rename
+        const loadedNodes = await this.getAllLoadedItems();
         const options: vscode.InputBoxOptions = {
             prompt: localize("renameUSS.enterName", "Enter a new name for the {0}", nodeType),
             value: originalNode.label.replace(/^\[.+\]:\s/, ""),
@@ -115,34 +136,34 @@ export class USSTree extends ZoweTreeProvider implements IZoweTree<IZoweUSSTreeN
                 let newNamePath = path.join(parentPath + newName);
                 newNamePath = newNamePath.replace(/\\/g, "/"); // Added to cover Windows backslash issue
                 const oldNamePath = originalNode.fullPath;
-                // // Handle rename in back-end:
-                // await ZoweExplorerApiRegister.getUssApi(originalNode.getProfile()).rename(oldNamePath, newNamePath);
-                const currentFilePath = originalNode.getUSSDocumentFilePath();
+                // Handle rename in back-end:
+                await ZoweExplorerApiRegister.getUssApi(originalNode.getProfile()).rename(oldNamePath, newNamePath);
+                // Handle temp document rename on user's local filesystem:
                 const oldFileUri: vscode.Uri = vscode.Uri.file(currentFilePath);
                 const newFileUri: vscode.Uri = vscode.Uri.file(
+                    // This is getUSSDocumentFilePath() but with newNamePath instead of this.fullPath
                     path.join(
                         globals.USS_DIR || "",
                         "/" + originalNode.getSessionNode().getProfileName() + "/",
                         newNamePath
                     )
                 );
-
                 vscode.workspace.fs.rename(oldFileUri, newFileUri);
 
                 // Handle rename in UI:
+                // Rename corresponding node in Sessions or Favorites section (whichever one Rename wasn't called from)
                 if (oldFavorite) {
-                    // Rename corresponding node in Sessions or Favorites section (whichever one Rename wasn't called from)
                     if (contextually.isFavorite(originalNode)) {
                         const profileName = originalNode.getProfileName();
                         this.renameNode(profileName, oldNamePath, newNamePath);
                     } else {
-                        // This has to happen before renaming originalNode, as originalNode's label is used to find the favorite equivalent.
+                        // This has to happen before renaming originalNode in UI, as originalNode's label is used to find the favorite equivalent.
                         this.renameFavorite(originalNode, newNamePath);
                     }
                 }
-                // Rename originalNode in UI
 
-                // await originalNode.rename(newNamePath); //NEED
+                // Rename originalNode in UI
+                await originalNode.rename(newNamePath);
 
                 // const hasClosedTab = await originalNode.rename(newNamePath);
                 // await originalNode.refreshAndReopen(hasClosedTab);
