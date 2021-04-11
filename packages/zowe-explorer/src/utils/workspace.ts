@@ -25,7 +25,7 @@ interface IExtTextEditor extends vscode.TextEditor {
  * Opens the next tab in editor with given delay
  */
 function openNextTab(delay: number) {
-    return new Promise((resolve) => {
+    return new Promise<void>((resolve) => {
         vscode.commands.executeCommand("workbench.action.nextEditor");
         setTimeout(() => resolve(), delay);
     });
@@ -39,7 +39,7 @@ export function setFileSaved(status: boolean) {
 
 export async function awaitForDocumentBeingSaved() {
     fileWasSaved = false;
-    return new Promise((resolve) => {
+    return new Promise<void>((resolve) => {
         let count = 0;
         const saveWaitIntervalId = setInterval(() => {
             if (workspaceUtilFileSaveMaxIterationCount > count) {
@@ -97,6 +97,8 @@ export async function checkTextFileIsOpened(path: string) {
  */
 export async function closeOpenedTextFile(path: string) {
     const openedWindows = [] as IExtTextEditor[];
+    const pathUri = vscode.Uri.file(path);
+    const openedTextDocuments: readonly vscode.TextDocument[] = vscode.workspace.textDocuments; // Array of all documents open in VS Code
 
     let emptySelectedCountInTheRow = 0;
     let selectedEditor = vscode.window.activeTextEditor as IExtTextEditor;
@@ -114,17 +116,30 @@ export async function closeOpenedTextFile(path: string) {
             emptySelectedCountInTheRow++;
         }
 
-        await openNextTab(workspaceUtilTabSwitchDelay);
-        selectedEditor = vscode.window.activeTextEditor as IExtTextEditor;
-
-        if (selectedEditor && selectedEditor.document.fileName === path) {
-            const isDirty = selectedEditor.document.isDirty;
-            await vscode.commands.executeCommand("workbench.action.closeActiveEditor");
-            if (isDirty) {
-                await awaitForDocumentBeingSaved();
+        for (const doc of openedTextDocuments) {
+            if (doc.fileName === path) {
+                // switch active tab to this doc
+                vscode.window.showTextDocument(pathUri, { preview: false });
+                const isDirty = selectedEditor.document.isDirty;
+                await vscode.commands.executeCommand("workbench.action.closeActiveEditor");
+                if (isDirty) {
+                    await awaitForDocumentBeingSaved();
+                }
+                return true;
             }
-            return true;
         }
+
+        // await openNextTab(workspaceUtilTabSwitchDelay);
+        // selectedEditor = vscode.window.activeTextEditor as IExtTextEditor;
+
+        // if (selectedEditor && selectedEditor.document.fileName === path) {
+        //     const isDirty = selectedEditor.document.isDirty;
+        //     await vscode.commands.executeCommand("workbench.action.closeActiveEditor");
+        //     if (isDirty) {
+        //         await awaitForDocumentBeingSaved();
+        //     }
+        //     return true;
+        // }
     }
 
     return false;
