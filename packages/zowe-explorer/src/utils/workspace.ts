@@ -118,8 +118,9 @@ export async function closeOpenedTextFile(path: string) {
 
         for (const doc of openedTextDocuments) {
             if (doc.fileName === path) {
-                // switch active tab to this doc
-                vscode.window.showTextDocument(pathUri, { preview: false });
+                // Switch active tab to this doc and close it (VS Code only lets us close an active editor)
+                // See https://code.visualstudio.com/api/references/vscode-api#TextEditor
+                await vscode.window.showTextDocument(pathUri, { preview: false });
                 const isDirty = selectedEditor.document.isDirty;
                 await vscode.commands.executeCommand("workbench.action.closeActiveEditor");
                 if (isDirty) {
