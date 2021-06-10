@@ -695,7 +695,7 @@ describe("Jobs Actions Unit Tests - Function getSpoolContent", () => {
 
         mocked(SpoolProvider.encodeJobFile).mockReturnValueOnce(blockMocks.mockUri);
         mocked(Profiles.getInstance).mockReturnValue(blockMocks.profileInstance);
-        await jobActions.getSpoolContent(blockMocks.testJobTree, "sessionName", blockMocks.iJobFile);
+        await jobActions.getSpoolContent(blockMocks.testJobTree, "sessionName", blockMocks.iJobFile, new Date());
 
         expect(mocked(vscode.workspace.openTextDocument)).toBeCalledWith(blockMocks.mockUri);
         expect(mocked(vscode.window.showTextDocument)).toBeCalled();
@@ -718,7 +718,7 @@ describe("Jobs Actions Unit Tests - Function getSpoolContent", () => {
 
         mocked(SpoolProvider.encodeJobFile).mockReturnValueOnce(blockMocks.mockUri);
         mocked(Profiles.getInstance).mockReturnValue(blockMocks.profileInstance);
-        await jobActions.getSpoolContent(blockMocks.testJobTree, "sessionName", blockMocks.iJobFile);
+        await jobActions.getSpoolContent(blockMocks.testJobTree, "sessionName", blockMocks.iJobFile, new Date());
 
         expect(mocked(vscode.workspace.openTextDocument)).toBeCalledWith(blockMocks.mockUri);
         expect(mocked(vscode.window.showTextDocument)).toBeCalled();
@@ -731,7 +731,7 @@ describe("Jobs Actions Unit Tests - Function getSpoolContent", () => {
             throw new Error("Test");
         });
         mocked(Profiles.getInstance).mockReturnValue(blockMocks.profileInstance);
-        await jobActions.getSpoolContent(blockMocks.testJobTree, "sessionName", blockMocks.iJobFile);
+        await jobActions.getSpoolContent(blockMocks.testJobTree, "sessionName", blockMocks.iJobFile, new Date());
 
         expect(mocked(vscode.workspace.openTextDocument)).not.toBeCalled();
         expect(mocked(vscode.window.showTextDocument)).not.toBeCalled();
@@ -744,7 +744,7 @@ describe("Jobs Actions Unit Tests - Function getSpoolContent", () => {
         blockMocks.profileInstance.promptCredentials.mockReturnValue(["fake", "fake", "fake"]);
         mocked(SpoolProvider.encodeJobFile).mockReturnValueOnce(blockMocks.mockUri);
         mocked(Profiles.getInstance).mockReturnValue(blockMocks.profileInstance);
-        await jobActions.getSpoolContent(blockMocks.testJobTree, "sessionName", blockMocks.iJobFile);
+        await jobActions.getSpoolContent(blockMocks.testJobTree, "sessionName", blockMocks.iJobFile, new Date());
 
         expect(mocked(vscode.workspace.openTextDocument)).toBeCalledWith(blockMocks.mockUri);
         expect(mocked(vscode.window.showTextDocument)).toBeCalled();
@@ -758,7 +758,7 @@ describe("Jobs Actions Unit Tests - Function getSpoolContent", () => {
             throw new Error("Test");
         });
         mocked(Profiles.getInstance).mockReturnValue(blockMocks.profileInstance);
-        await jobActions.getSpoolContent(blockMocks.testJobTree, "sessionName", blockMocks.iJobFile);
+        await jobActions.getSpoolContent(blockMocks.testJobTree, "sessionName", blockMocks.iJobFile, new Date());
 
         expect(mocked(vscode.workspace.openTextDocument)).not.toBeCalled();
         expect(mocked(vscode.window.showTextDocument)).not.toBeCalled();

@@ -351,8 +351,8 @@ function initUSSProvider(context: vscode.ExtensionContext, ussFileProvider: IZow
 }
 
 function initJobsProvider(context: vscode.ExtensionContext, jobsProvider: IZoweTree<IZoweJobTreeNode>) {
-    vscode.commands.registerCommand("zowe.zosJobsOpenspool", (session, spool) =>
-        jobActions.getSpoolContent(jobsProvider, session, spool)
+    vscode.commands.registerCommand("zowe.zosJobsOpenspool", (session, spool, timestamp) =>
+        jobActions.getSpoolContent(jobsProvider, session, spool, timestamp)
     );
     vscode.commands.registerCommand("zowe.deleteJob", async (job) => jobActions.deleteCommand(job, jobsProvider));
     vscode.commands.registerCommand("zowe.runModifyCommand", (job) => jobActions.modifyCommand(job));
@@ -399,6 +399,7 @@ function initJobsProvider(context: vscode.ExtensionContext, jobsProvider: IZoweT
     );
     vscode.commands.registerCommand("zowe.jobs.ssoLogin", async (node) => jobsProvider.ssoLogin(node));
     vscode.commands.registerCommand("zowe.jobs.ssoLogout", async (node) => jobsProvider.ssoLogout(node));
+    vscode.commands.registerCommand("zowe.jobs.refreshJob", async (node) => jobActions.refreshJob(node, jobsProvider));
     vscode.workspace.onDidChangeConfiguration((e) => {
         jobsProvider.onDidChangeConfiguration(e);
     });

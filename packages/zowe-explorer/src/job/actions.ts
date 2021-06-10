@@ -26,6 +26,10 @@ nls.config({
 })();
 const localize: nls.LocalizeFunc = nls.loadMessageBundle();
 
+export function refreshJob(job: Job, jobsProvider: IZoweTree<IZoweJobTreeNode>) {
+    jobsProvider.refreshElement(job);
+}
+
 /**
  * Download all the spool content for the specified job.
  *
@@ -60,7 +64,8 @@ export async function downloadSpool(job: IZoweJobTreeNode) {
 export async function getSpoolContent(
     jobsProvider: IZoweTree<IZoweJobTreeNode>,
     session: string,
-    spool: zowe.IJobFile
+    spool: zowe.IJobFile,
+    timestamp: Date
 ) {
     const zosmfProfile = Profiles.getInstance().loadNamedProfile(session);
     // This has a direct access to Profiles checkcurrentProfile() because I am able to get the profile now.
@@ -70,7 +75,7 @@ export async function getSpoolContent(
         Profiles.getInstance().validProfile === ValidProfileEnum.UNVERIFIED
     ) {
         try {
-            const uri = encodeJobFile(session, spool);
+            const uri = encodeJobFile(session, spool, timestamp);
             const document = await vscode.workspace.openTextDocument(uri);
             await vscode.window.showTextDocument(document);
         } catch (error) {

@@ -41,12 +41,13 @@ export default class SpoolProvider implements vscode.TextDocumentContentProvider
  * @param session The name of the Zowe profile to use to get the Spool Content
  * @param spool The IJobFile to get the spool content for.
  */
-export function encodeJobFile(session: string, spool: zowe.IJobFile): vscode.Uri {
+export function encodeJobFile(session: string, spool: zowe.IJobFile, timestamp: Date): vscode.Uri {
     const query = JSON.stringify([session, spool]);
     return vscode.Uri.parse("").with({
         scheme: SpoolProvider.scheme,
         path: `${spool.jobname}.${spool.jobid}.${spool.ddname}`,
         query,
+        fragment: timestamp.toString(),
     });
 }
 
