@@ -87,7 +87,7 @@ These Zowe Conformance criteria are applicable to the lastest Zowe v1 LTS Releas
    <th style="background-color:#AAAAAA"></th>
    <th style="background-color:#AAAAAA">x</th>
    <th></th>
-   <td><b>Zowe SDK usage:</b> Extension utilizes the available Zowe SDKs and it standardizes the z/OS interaction as well as other common capabilities that used by many other Zowe extensions and tools.</td>
+   <td><b>Zowe SDK usage:</b> Extension utilizes the available Zowe SDKs and it standardizes the z/OS interaction as well as other common capabilities that are used by many other Zowe extensions and tools.</td>
  </tr>
 
  <tr>
@@ -195,7 +195,7 @@ These Zowe Conformance criteria are applicable to the lastest Zowe v1 LTS Releas
    <th style="background-color:#AAAAAA">x</th>
    <th style="background-color:#AAAAAA"></th>
    <th></th>
-   <td><b>Matching Zowe CLI Plugin: </b> Provide a Zowe CLI Plugin for the data provider's profile type that implements the core capabilities requires for the new protocol that users can then also use to interact with the protocol outside of the Zowe Explorer extension using Zowe CLI commands.</td>
+   <td><b>Matching Zowe CLI Plugin: </b> Provide a Zowe CLI Plugin for the data provider's profile type that implements the core capabilities required for the new protocol that users can then also use to interact with the protocol outside of the Zowe Explorer extension using Zowe CLI commands.</td>
  </tr>
 
  <tr>
@@ -204,7 +204,7 @@ These Zowe Conformance criteria are applicable to the lastest Zowe v1 LTS Releas
    <th style="background-color:#AAAAAA">x</th>
    <th style="background-color:#AAAAAA"></th>
    <th></th>
-   <td><b>Data provider API implementation:  </b> Extension fully implements and registers to at least one of the three Zowe Explorer interfaces or alternatively throw exceptions that provide meaningful error messages to the end-user in the 'Error.message' property that will be displayed in a dialog.</td>
+   <td><b>Data provider API implementation:  </b> Extension fully implements and registers to at least one of the three Zowe Explorer interfaces or alternatively throws exceptions that provide meaningful error messages to the end-user in the 'Error.message' property that will be displayed in a dialog.</td>
  </tr>
 
  <tr>

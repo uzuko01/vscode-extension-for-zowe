@@ -18,11 +18,11 @@ Every conformance criteria needs to be clearly scoped, defined, and objectively 
 - Unique name: each criteria has a short unique name that can be used for reference and discussion amongst parties
 - Required vs Best Practice: we currently distinguish if a criteria is a must-do for conformance versus if it is just a recommended best practice.
 - Goal: each criteria should in its description clearly state the goal or rationale for requiring it.
-- Testability: Each criteria should specify the way and extender as well as the Zowe Explorer squad can verify conformance.
+- Testability: Each criteria should specify the way an extender as well as the Zowe Explorer squad can verify conformance.
 
 ## General conformance criteria (0)
 
-These criteria are independent of the kind of extension produce and need to be fulfill for all cases.
+These criteria are independent of the kind of extension and need to be fulfilled for all cases.
 
 1. (Required) Naming: **If the extension uses the word "Zowe" in its name, it abides by Linux Foundation's Trademark Usage rules to ensure the word Zowe is used in a way intended by the Zowe community.**
 
@@ -30,7 +30,7 @@ These criteria are independent of the kind of extension produce and need to be f
 
 1. (Required): No Zowe CLI plugin installation requirement: **If the extender makes use of a Zowe CLI profile other than the Zowe Explorer default `zosmf` then the extension must not make any assumptions that a matching Zowe CLI plugin has been installed in the Zowe Explorer user's environment.**
 
-   In other words the extension must be full self-contained including all the code of the Zowe CLI Plugin that implements the new profile. This will not only simplify the end user experience, but also ensures that the extension can run in other VS Code compatible environments such as Cloud IDEs such as Eclipse Che. For VS Code extensions Zowe Explorer provides APIs to call that ensure that the users can store and access such new profiles in Zowe home directory folders and secure credentials store, which should be used or an equivalent needs to be provided. To test this requirement a user shall be able start the extension and use it without having Nodejs and Zowe CLI installed locally.
+   In other words the extension must be self-contained including all the code of the Zowe CLI Plugin that implements the new profile. This will not only simplify the end user experience, but also ensures that the extension can run in other VS Code compatible environments such as Cloud IDEs like Eclipse Che. For VS Code extensions Zowe Explorer provides APIs to call that ensure that the users can store and access such new profiles in Zowe home directory folders and secure credentials store, which should be used or an equivalent needs to be provided. To test this requirement a user shall be able start the extension and use it without having Nodejs and Zowe CLI installed locally.
 
 1. (Required) Publication tag: **If the extension is published in a public catalog or marketplace such as Npmjs, Open-VSX, or VS Code Marketplace then it must use the tag or keyword "Zowe" so it can be found when searching for Zowe and be listed with other Zowe offerings.**
 
@@ -56,7 +56,7 @@ These criteria are independent of the kind of extension produce and need to be f
 
 A Profiles Access extension is a Zowe Explorer extension that uses the Zowe Extensibility API to conveniently access Zowe CLI profiles loaded by Zowe Explorer itself. This allows the extension to consistently access profile instances of specific types, offer them for edit and updates as well as common refresh operations that apply to all extensions, add more profile types it is using itself for its own custom views (for example a CICS extension adding a CICS explorer view) and other similar use cases related to Zowe CLI profiles. These extensions do **not** have to be VS Code extension if it just wants to use ProfilesCache implementation of Zowe Explorer as all APIs are provided free of any VS Code dependencies. Such an extension could be used for another non-VS Code tool, a Zowe CLI plugin, a Web Server or another technology. However, to access the profiles cache of the actual running VS Code Zowe Explorer the extender needs to be a VS Code extension that has an extension dependency defined to be able to query the extender APIs. Therefore, some of the criteria that are listed here as required are only required if the extender is a VS Code extension.
 
-1. (Required if VS Code) VS Code extension dependency: **Zowe Explorer VS Code extensions can only be activated after Zowe Explorer is fully activated itself. Therefore, to ensure the correct activation order and extender must include an extensionDependencies to Zowe Explorer entry in their package.json file.**
+1. (Required if VS Code) VS Code extension dependency: **Zowe Explorer VS Code extensions can only be activated after Zowe Explorer is fully activated itself. Therefore, to ensure the correct activation order an extender must include an extensionDependencies to Zowe Explorer entry in their package.json file.**
 
    The package.json file must be provided to verify this criteria.
 
@@ -80,15 +80,15 @@ A data provider Zowe Explorer extension provides an alternative protocol for Zow
 
 1. (Required) New Zowe CLI profile type: **A new data provider requires a new Zowe CLI profile type as it is the foundation for registering the APIs that add the new protocol as documented in the extension guideline. When new APIs get registered via the `ZoweExplorerApi.IApiRegisterClient.registerMvsApi()` call the APIs passed as a parameter needs to use a unique profile type name.**
 
-   Such registration events will be logged by Zowe Explorer and can be used to verify to successful implementation of the requirement in the Zowe Explorer logs.
+   Such registration events will be logged by Zowe Explorer and can be used to verify successful implementation of the requirement in the Zowe Explorer logs.
 
-1. (Best Practice) Matching Zowe CLI Plugin: **Provide a Zowe CLI Plugin for the data provider's profile type that implements the core capabilities requires for the new protocol that users can then also use to interact with the protocol outside of the Zowe Explorer extension using Zowe CLI commands.**
+1. (Best Practice) Matching Zowe CLI Plugin: **Provide a Zowe CLI Plugin for the data provider's profile type that implements the core capabilities required for the new protocol that users can then also use to interact with the protocol outside of the Zowe Explorer extension using Zowe CLI commands.**
 
    A Zowe CLI Plugin is a regular NPM package that then can be completely imported as a dependency into a VS Code extension that represents a data provider for Zowe Explorer. The zFTP Zowe CLI Plugin and Zowe Explorer extension for zFTP are an example for such a pairing. This requirement can be verified by testing the CLI plugin and seeing it being used in the package.json file of the VS Code extension.
 
-1. (Required) Data provider API implementation: **The Zowe Explorer extensibility API provides interfaces for the required operations to be implemented for MVS, JESS and USS. An extender must either fully implement and register at least one of these three interfaces or alternatively throw JavaScript exceptions that provide meaningful error messages to the end-user in the `Error.message` property of the exception that Zowe Explorer will display in a dialog.**
+1. (Required) Data provider API implementation: **The Zowe Explorer extensibility API provides interfaces for the required operations to be implemented for MVS, JES and USS. An extender must either fully implement and register at least one of these three interfaces or alternatively throw JavaScript exceptions that provide meaningful error messages to the end-user in the `Error.message` property of the exception that Zowe Explorer will display in a dialog.**
 
-   "Not yet implemented by the XYZ data provider" could be an example. Registering a new data provider API instance will be logged by Zowe Explorer and be be verified in the Zowe Explorer log files.
+   "Not yet implemented by the XYZ data provider" could be an example. Registering a new data provider API instance will be logged by Zowe Explorer and can be verified in the Zowe Explorer log files.
 
 1. (Best practice) API test suite implementation: **If the extension implements a Zowe Explorer API data provider interface, it should implement a test suite that calls each of the implemented API methods.**
 
