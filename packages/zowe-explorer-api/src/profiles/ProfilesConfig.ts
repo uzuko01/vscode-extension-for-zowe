@@ -9,7 +9,9 @@
  *                                                                                 *
  */
 
-import { IProfileLoaded, Logger, IProfAttrs, IProfile, ProfileInfo } from "@zowe/imperative";
+import * as path from "path";
+import * as os from "os";
+import { IProfileLoaded, Logger, IProfAttrs, IProfile, ProfileInfo, ConfigSchema, ConfigBuilder, ImperativeConfig, Config } from "@zowe/imperative";
 
 export interface IProfileValidationConfig {
     status: string;
@@ -53,5 +55,31 @@ export class ProfilesConfig {
 
     public static getDefaultProfile(mProfileInfo: ProfileInfo, profileType: string): IProfAttrs {
         return mProfileInfo.getDefaultProfile(profileType);
+    }
+
+    public static async createSchema(): Promise<string> {
+        try {
+            ImperativeConfig.instance.loadedConfig = {
+                defaultHome: path.join(os.homedir(), ".zowe"),
+                envVariablePrefix: "ZOWE",
+            };
+            // await ProfilesConfig.getInstance().readProfilesFromDisk();
+            // const config = ProfilesConfig.getInstance().getTeamConfig();
+            const config = await Config.load("zowe");
+            config.setSchema(ConfigSchema.buildSchema(ImperativeConfig.instance.loadedConfig.profiles));
+
+            // Note: IConfigBuilderOpts not exported
+            // const opts: IConfigBuilderOpts = {
+            const opts: any = {
+            // getSecureValue: this.promptForProp.bind(this),
+                populateProperties: true
+            };
+
+            // Build new config and merge with existing layer
+            config.api.layers.merge(await ConfigBuilder.build(ImperativeConfig.instance.loadedConfig, opts));
+            return "done!";
+        } catch (err) {
+            return "Error: " + err.message;
+        }
     }
 }

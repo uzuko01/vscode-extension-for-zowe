@@ -643,6 +643,11 @@
           "light": "./resources/light/pattern.svg",
           "dark": "./resources/dark/pattern.svg"
         }
+      },
+      {
+        "command": "zowe.config.init.test",
+        "title": "zowe config init",
+        "category": "Zowe Test"
       }
     ],
     "menus": {

@@ -17,8 +17,7 @@ import {
     Session,
     SessConstants,
     IUpdateProfile,
-    IProfile,
-    ProfileInfo,
+    IProfile
 } from "@zowe/imperative";
 import * as vscode from "vscode";
 import * as zowe from "@zowe/cli";
@@ -295,6 +294,10 @@ export class Profiles extends ProfilesCache {
             this.profilesValidationSetting.push(profileSetting);
         }
         return profileSetting;
+    }
+    public async createZoweConfig(zoweFileProvider: IZoweTree<IZoweTreeNode>) {
+        vscode.window.showInformationMessage("zowe config init");
+        vscode.window.showInformationMessage("test: " + await ProfilesConfig.createSchema());
     }
 
     /**
