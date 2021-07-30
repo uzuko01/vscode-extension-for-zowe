@@ -257,6 +257,10 @@ export class ZoweTreeProvider {
         await vscode.commands.executeCommand("zowe.refreshAllJobs");
     }
 
+    public async createZoweSchema(zoweFileProvider: IZoweTree<IZoweNodeType>) {
+        await Profiles.getInstance().createZoweSchema(zoweFileProvider);
+    }
+
     public async createZoweSession(zoweFileProvider: IZoweTree<IZoweNodeType>) {
         await Profiles.getInstance().createZoweSession(zoweFileProvider);
     }

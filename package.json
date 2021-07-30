@@ -18,8 +18,9 @@
     "vscode": "^1.43.0"
   },
   "dependencies": {
-    "@zowe/cli": "7.0.0-next.202106012053",
-    "vscode-nls": "4.1.2"
+    "@zowe/cli": "7.0.0-next.202107211828",
+    "vscode-nls": "4.1.2",
+		"true-case-path": "2.2.1"
   },
   "devDependencies": {
     "@types/mocha": "^2.2.42",

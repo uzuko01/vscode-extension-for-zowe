@@ -56,6 +56,7 @@ export function createDatasetTree(sessionNode: ZoweDatasetNode, treeView: any, f
         checkCurrentProfile: jest.fn(),
         getChildren: jest.fn(),
         getTreeType: jest.fn().mockImplementation(() => PersistenceSchemaEnum.Dataset),
+        createZoweSchema: jest.fn(),
         createZoweSession: jest.fn(),
         createFilterString: jest.fn(),
         setItem: jest.fn(),

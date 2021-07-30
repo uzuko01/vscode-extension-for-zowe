@@ -17,11 +17,19 @@ import {
     Session,
     SessConstants,
     IUpdateProfile,
-    IProfile
+    IProfile,
+    ConfigSchema,
+    ConfigBuilder,
+    ImperativeConfig,
+    IImperativeConfig,
+    Config,
+    IConfig,
+    ICommandProfileTypeConfiguration
 } from "@zowe/imperative";
 import * as vscode from "vscode";
 import * as zowe from "@zowe/cli";
 import * as path from "path";
+import * as os from "os";
 import {
     IZoweTree,
     IZoweNodeType,
@@ -38,6 +46,7 @@ import {
 } from "@zowe/zowe-explorer-api";
 import { errorHandling, FilterDescriptor, FilterItem, resolveQuickPickHelper, isTheia } from "./utils/ProfilesUtils";
 import { ZoweExplorerApiRegister } from "./ZoweExplorerApiRegister";
+import { trueCasePathSync } from "true-case-path";
 
 import * as nls from "vscode-nls";
 
@@ -294,10 +303,6 @@ export class Profiles extends ProfilesCache {
             this.profilesValidationSetting.push(profileSetting);
         }
         return profileSetting;
-    }
-    public async createZoweConfig(zoweFileProvider: IZoweTree<IZoweTreeNode>) {
-        vscode.window.showInformationMessage("zowe config init");
-        vscode.window.showInformationMessage("test: " + await ProfilesConfig.createSchema());
     }
 
     /**
@@ -617,6 +622,41 @@ export class Profiles extends ProfilesCache {
             profileType = await vscode.window.showQuickPick(typeOptions, quickPickTypeOptions);
         }
         return profileType;
+    }
+
+    public async createZoweSchema(zoweFileProvider: IZoweTree<IZoweTreeNode>) {
+        try {
+            ImperativeConfig.instance.loadedConfig = {
+                defaultHome: path.join(os.homedir(), ".zowe"),
+                envVariablePrefix: "ZOWE",
+            };
+
+            // If there are no workspaces already opened, default to the cliHome
+            const rootPath = vscode.workspace.workspaceFolders?.[0].uri.fsPath || ImperativeConfig.instance.cliHome;
+            // true-case-path may or may not be needed. Better safe than sorry : )
+            const config = await Config.load("zowe", {projectDir: trueCasePathSync(rootPath)});
+
+            const impConfig: IImperativeConfig = zowe.getImperativeConfig();
+            const knownCliConfig: ICommandProfileTypeConfiguration[] = impConfig.profiles;
+            knownCliConfig.push(impConfig.baseProfile);
+            config.setSchema(ConfigSchema.buildSchema(knownCliConfig));
+
+
+            // Note: IConfigBuilderOpts not exported
+            // const opts: IConfigBuilderOpts = {
+            const opts: any = {
+            // getSecureValue: this.promptForProp.bind(this),
+                populateProperties: true
+            };
+
+            // Build new config and merge with existing layer
+            const newConfig: IConfig = await ConfigBuilder.build(impConfig, opts);
+            config.api.layers.merge(newConfig);
+            await config.save(false);
+            vscode.window.showInformationMessage("Created config-init. Location: " + rootPath);
+        } catch (err) {
+            vscode.window.showErrorMessage("Error config-init: " + err.message);
+        }
     }
 
     public async createNewConnection(profileName: string, requestedProfileType?: string): Promise<string | undefined> {
