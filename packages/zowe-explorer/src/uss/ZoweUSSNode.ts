@@ -154,17 +154,20 @@ export class ZoweUSSNode extends ZoweTreeNode implements IZoweUSSTreeNode {
         const responses: zowe.IZosFilesResponse[] = [];
         const sessNode = this.getSessionNode();
         try {
-            responses.push(
-                await vscode.window.withProgress(
-                    {
-                        location: vscode.ProgressLocation.Notification,
-                        title: localize("ZoweUssNode.getList.progress", "Get USS file list command submitted."),
-                    },
-                    () => {
-                        return ZoweExplorerApiRegister.getUssApi(this.getProfile()).fileList(this.fullPath);
-                    }
-                )
-            );
+            // Run server call only upon expansion
+            if (this.collapsibleState === vscode.TreeItemCollapsibleState.Expanded) {
+                responses.push(
+                    await vscode.window.withProgress(
+                        {
+                            location: vscode.ProgressLocation.Notification,
+                            title: localize("ZoweUssNode.getList.progress", "Get USS file list command submitted."),
+                        },
+                        () => {
+                            return ZoweExplorerApiRegister.getUssApi(this.getProfile()).fileList(this.fullPath);
+                        }
+                    )
+                );
+            }
         } catch (err) {
             await errorHandling(
                 err,
