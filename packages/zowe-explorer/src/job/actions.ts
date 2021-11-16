@@ -20,6 +20,7 @@ import * as nls from "vscode-nls";
 import { toUniqueJobFileUri } from "../SpoolProvider";
 import { IProfileLoaded } from "@zowe/imperative";
 import * as globals from "../globals";
+import * as contextually from "../shared/context";
 
 // Set up localization
 nls.config({
@@ -287,10 +288,34 @@ export async function deleteCommand(job: IZoweJobTreeNode, jobsProvider: IZoweTr
 
     // delete selected nodes
     if (nodes.length > 0) {
-        for (const node of nodes) {
-            await jobsProvider.delete(node);
-            deletedNodes.push(`${node.job.jobname}(${node.job.jobid})`);
-        }
+        await vscode.window.withProgress(
+            {
+                location: vscode.ProgressLocation.Notification,
+                title: localize("deleteJobPrompt.deleteCounter", "Deleting nodes"),
+                cancellable: true,
+            },
+            async (progress, token) => {
+                const total = 100;
+                for (const [index, currNode] of nodes.entries()) {
+                    if (token.isCancellationRequested) {
+                        vscode.window.showInformationMessage(
+                            localize("deleteJobPrompt.deleteCancelled", "Delete action was cancelled.")
+                        );
+                        return;
+                    }
+                    progress.report({
+                        message: `Deleting ${index + 1} of ${nodes.length}`,
+                        increment: (index / nodes.length) * total,
+                    });
+                    try {
+                        await jobsProvider.delete(currNode);
+                        deletedNodes.push(`${currNode.job.jobname}(${currNode.job.jobid})`);
+                    } catch (err) {
+                        // do nothing; delete next
+                    }
+                }
+            }
+        );
         vscode.window.showInformationMessage(
             localize(
                 "deleteCommand.multipleJobs",
